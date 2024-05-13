@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     transcriber = rtrans.RTranscriber(
         task_queue=task_queue,
-        device="cuda",
+        device="cpu",
     ).init(force=True)
 
     try:
