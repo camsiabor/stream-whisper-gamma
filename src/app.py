@@ -3,7 +3,7 @@ import traceback
 
 import pyaudiowpatch as pyaudio
 
-from src import rtask, rtranscribe
+from src import rtask, rtranscribe, rtranslate, rmanifest
 from src.recorder import Recorder
 
 if __name__ == "__main__":
@@ -33,18 +33,34 @@ if __name__ == "__main__":
         device="cuda",
     ).init(force=True)
 
+    translater = rtranslate.RTranslater(
+        task_ctrl=task_ctrl,
+    )
+
+    renderer = rmanifest.RManifest(
+        task_ctrl=task_ctrl,
+    )
+
     try:
 
-        recorder.start()
+        renderer.start()
+        translater.start()
         transcriber.start()
+        recorder.start()
 
         while True:
             com = input("Enter command: ").split()
             if com[0] == "exit":
+                recorder.do_run = False
+                transcriber.do_run = False
+                translater.do_run = False
+                renderer.do_run = False
                 break
 
         recorder.join()
         transcriber.join()
+        translater.join()
+        renderer.join()
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt: terminating...")

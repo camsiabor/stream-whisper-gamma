@@ -220,12 +220,14 @@ class Recorder(threading.Thread):
                     # logging.info("audio task number: {}".format(Queues.audio.qsize()))
 
     def run(self):
+        print("[recorder] running")
         try:
             if self.stream is None:
                 self.start_recording()
             self.monitor()
         except Exception:
             traceback.print_exc()
+        print("[recorder] end")
 
 
     def stop_stream(self):

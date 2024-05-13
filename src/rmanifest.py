@@ -4,7 +4,7 @@ import traceback
 from src import rtask
 
 
-class Renderer(threading.Thread):
+class RManifest(threading.Thread):
 
     def __init__(
             self,
@@ -15,6 +15,7 @@ class Renderer(threading.Thread):
         self.do_run = True
 
     def run(self):
+        print("[manifest] running")
         error_count = 0
         while self.do_run:
             try:
@@ -34,6 +35,4 @@ class Renderer(threading.Thread):
                     print("[renderer] error_count > 3, breaking...")
                     break
                 error_count += 1
-
-
-        pass
+        print("[manifest] end")

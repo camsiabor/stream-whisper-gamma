@@ -82,6 +82,7 @@ class RTranscriber(threading.Thread):
                 yield t
 
     def run(self):
+        print("[transcriber] running")
         error_count = 0
         while self.do_run:
             try:
@@ -97,3 +98,4 @@ class RTranscriber(threading.Thread):
                     print("[transcriber] error_count > 3, breaking...")
                     break
                 error_count += 1
+        print("[transcriber] end")
