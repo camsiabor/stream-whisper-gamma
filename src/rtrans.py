@@ -5,13 +5,13 @@ import typing
 import codefast as cf
 from faster_whisper import WhisperModel
 
-from src import rqueue
+from src import rtask
 
 
 class RTranscriber(threading.Thread):
     def __init__(
             self,
-            task_queue: rqueue.RQueue,
+            task_ctrl: rtask.RTaskControl,
             model_size: str = "large-v3",
             device: str = "cuda",
             compute_type: str = "default",
@@ -28,7 +28,7 @@ class RTranscriber(threading.Thread):
             prompt (str, optional): 初始提示。如果需要转写简体中文，可以使用简体中文提示。
         """
         super().__init__()
-        self.task_queue = task_queue
+        self.task_ctrl = task_ctrl
 
         self.model_size = model_size
         self.download_root = download_root
@@ -78,9 +78,9 @@ class RTranscriber(threading.Thread):
 
     def run(self):
         while True:
-            audio = self.task_queue.audio.get()
+            audio = self.task_ctrl.audio.get()
             text = ''
             for seg in self(audio):
                 print(cf.fp.cyan(seg))
                 text += seg
-            self.task_queue.text.put(text)
+            self.task_ctrl.text.put(text)

@@ -3,7 +3,7 @@ import traceback
 
 import pyaudiowpatch as pyaudio
 
-from src import rqueue, rtrans
+from src import rtask, rtrans
 from src.recorder import Recorder
 
 if __name__ == "__main__":
@@ -14,23 +14,23 @@ if __name__ == "__main__":
 
     p = pyaudio.PyAudio()
 
-    task_queue = rqueue.RQueue()
+    task_ctrl = rtask.RTaskControl()
 
     recorder = Recorder(
         p_audio=p,
         # 512 works
-        task_queue=task_queue,
+        task_ctrl=task_ctrl,
         # 512 works too
         chunk_size=4096,
         # ONLY 10 works
         frame_duration=15,
         # watcher max len, 10 works pretty well
-        watcher_maxlen=10,
+        watcher_maxlen=6,
     )
 
     transcriber = rtrans.RTranscriber(
-        task_queue=task_queue,
-        device="cpu",
+        task_ctrl=task_ctrl,
+        device="cuda",
     ).init(force=True)
 
     try:

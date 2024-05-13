@@ -10,11 +10,7 @@ import wave
 import pyaudiowpatch as pyaudio
 import webrtcvad
 
-import rqueue
-
-
-# import wave
-# import os
+import rtask
 
 
 class ARException(Exception):
@@ -32,8 +28,8 @@ class InvalidDevice(ARException):
 class Recorder(threading.Thread):
 
     def __init__(self,
-                 p_audio: pyaudio.PyAudio = pyaudio.PyAudio(),
-                 task_queue: rqueue.RQueue = rqueue.RQueue(),
+                 p_audio: pyaudio.PyAudio,
+                 task_ctrl: rtask.RTaskControl,
                  output_queue: queue.Queue = queue.Queue(),
                  output_channels: int = 0,
                  sample_rate: int = 0,
@@ -69,7 +65,7 @@ class Recorder(threading.Thread):
         self.watcher_maxlen = watcher_maxlen
         self.watcher_ratio = watcher_ratio
 
-        self.task_queue = task_queue
+        self.task_ctrl = task_ctrl
 
         self.__frames: typing.List[bytes] = []
 
@@ -204,7 +200,12 @@ class Recorder(threading.Thread):
                     triggered = False
                     # self.to_wav()
                     frames = self.get_current_frames()
-                    self.task_queue.audio.put(frames)
+
+                    task = rtask.RTask(
+                        audio=frames,
+                    )
+
+                    self.task_ctrl.queue_translate.put(task)
                     # logging.info("audio task number: {}".format(Queues.audio.qsize()))
 
     def run(self):
