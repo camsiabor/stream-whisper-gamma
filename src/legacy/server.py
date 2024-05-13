@@ -6,8 +6,8 @@ from collections import deque
 import aioredis
 from faster_whisper import WhisperModel
 
-from .config import REDIS_SERVER
-from .utils import asyncformer
+from src.legacy.config import REDIS_SERVER
+from src.legacy.utils import asyncformer
 
 CONVERSATION = deque(maxlen=100)
 MODEL_SIZE = "large-v3"

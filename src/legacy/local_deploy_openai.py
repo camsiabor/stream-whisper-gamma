@@ -8,21 +8,21 @@
 运行方式:
     python3 local_deploy.py
 """
-from faster_whisper import WhisperModel
-from io import BytesIO
-import typing
-import io
 import collections
-import wave
+import io
+import logging
+# 解决bug问题
+import os
 import time
+import typing
+import wave
+from io import BytesIO
 
 import pyaudio
 import webrtcvad
-import logging
-from funasr import AutoModel  #添加标点的模型
+from faster_whisper import WhisperModel
+from funasr import AutoModel  # 添加标点的模型
 
-#解决bug问题
-import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import openai

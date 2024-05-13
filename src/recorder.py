@@ -1,24 +1,20 @@
 import collections
 import datetime
 import io
-import logging
 import os
 import queue
 import threading
 import typing
 import wave
-from queue import Queue
 
 import pyaudiowpatch as pyaudio
 import webrtcvad
 
+import rqueue
+
 
 # import wave
 # import os
-
-class AudioQueue:
-    audio = queue.Queue()
-    text = queue.Queue()
 
 
 class ARException(Exception):
@@ -33,18 +29,20 @@ class InvalidDevice(ARException):
     ...
 
 
-class AudioRecorder(threading.Thread):
+class Recorder(threading.Thread):
 
     def __init__(self,
                  p_audio: pyaudio.PyAudio = pyaudio.PyAudio(),
-                 output_queue: Queue = Queue(),
+                 task_queue: rqueue.RQueue = rqueue.RQueue(),
+                 output_queue: queue.Queue = queue.Queue(),
                  output_channels: int = 0,
                  sample_rate: int = 0,
                  # data_format: int = pyaudio.paInt24,
                  data_format: int = pyaudio.paInt16,
                  chunk_size: int = 1024,  # 512 works
-                 frame_duration: int = 10,  # 10 works
-                 watcher_maxlen: int = 10,
+                 frame_duration: int = 10,  # 10 works ONLY!!!
+                 watcher_maxlen: int = 10,  # 10 works pretty well
+                 watcher_ratio: float = 0.5,
                  ):
 
         super().__init__()
@@ -68,12 +66,13 @@ class AudioRecorder(threading.Thread):
         self.frame_duration = frame_duration
 
         self.watcher_maxlen = watcher_maxlen
+        self.watcher_ratio = watcher_ratio
 
-        self.audio_queue = AudioQueue()
+        self.task_queue = task_queue
 
         self.__frames: typing.List[bytes] = []
 
-    def __enter__(self) -> 'AudioRecorder':
+    def __enter__(self) -> 'Recorder':
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -182,14 +181,14 @@ class AudioRecorder(threading.Thread):
     def splitting(self):
 
         watcher = collections.deque(maxlen=self.watcher_maxlen)
-        triggered, ratio = False, 0.5
+        triggered = False
 
         frame_size = self.get_frame_size()
         sample_rate = self.get_sample_rate()
 
         while True:
             frame = self.stream.read(frame_size, exception_on_overflow=False)
-            print(f"frames len: {len(frame)}")
+            # print(f"frames len: {len(frame)}")
             if not frame:
                 continue
             is_speech = self.vad.is_speech(frame, sample_rate)
@@ -197,19 +196,19 @@ class AudioRecorder(threading.Thread):
             self.__frames.append(frame)
             if not triggered:
                 num_voiced = len([x for x in watcher if x])
-                if num_voiced > ratio * watcher.maxlen:
-                    logging.info("start recording...")
+                if num_voiced > self.watcher_ratio * watcher.maxlen:
+                    # logging.info("start recording...")
                     triggered = True
                     watcher.clear()
                     self.__frames = self.__frames[-self.watcher_maxlen:]
             else:
                 num_unvoiced = len([x for x in watcher if not x])
-                if num_unvoiced > ratio * watcher.maxlen:
-                    logging.info("stop recording...")
+                if num_unvoiced > self.watcher_ratio * watcher.maxlen:
+                    # logging.info("stop recording...")
                     triggered = False
-                    self.to_wav()
-                    # frames = self.get_current_frames()
-                    # self.audio_queue.audio.put(frames)
+                    # self.to_wav()
+                    frames = self.get_current_frames()
+                    self.task_queue.audio.put(frames)
                     # logging.info("audio task number: {}".format(Queues.audio.qsize()))
 
     def stop_stream(self):
@@ -227,68 +226,3 @@ class AudioRecorder(threading.Thread):
     @property
     def stream_status(self):
         return "closed" if self.stream is None else "stopped" if self.stream.is_stopped() else "running"
-
-
-if __name__ == "__main__":
-    print("start =========== ")
-    p = pyaudio.PyAudio()
-
-    ar = AudioRecorder(
-        p_audio=p,
-        # 512 works
-        chunk_size=4096,
-        # ONLY 10 works
-        frame_duration=15,
-        # watcher max len, 10 works pretty well
-        watcher_maxlen=10,
-    )
-
-    help_msg = 30 * "-" + ("\n\n\nStatus:\nRunning=%s | Device=%s | output=%s\n\nCommands:\nlist\nrecord {"
-                           "device_index\\default}\npause\ncontinue\nstop {*.wav\\default}\n")
-
-    device_def = ar.get_default_wasapi_device()
-
-    try:
-        while True:
-            print(help_msg % (
-                ar.stream_status, device_def["index"] if device_def is not None else "None", ""))
-            com = input("Enter command: ").split()
-            if com[0] == "list":
-                p.print_detailed_system_info()
-            elif com[0] == "record":
-                ar.start_recording(None, True)
-            elif com[0] == "pause":
-                ar.stop_stream()
-            elif com[0] == "continue":
-                ar.start_stream()
-            elif com[0] == "stop":
-                ar.close_stream()
-
-                filename = "../temp/a.wav"
-
-                if len(com) > 1 and com[1].endswith(".wav") and os.path.exists(
-                        os.path.dirname(os.path.realpath(com[1]))):
-                    filename = com[1]
-
-                wave_file = wave.open(filename, 'wb')
-                wave_file.setnchannels(ar.get_output_channels())
-                wave_file.setsampwidth(ar.get_sample_width())
-                wave_file.setframerate(ar.get_sample_rate())
-
-                while not ar.output_queue.empty():
-                    wave_file.writeframes(ar.output_queue.get())
-                wave_file.close()
-
-                print(f"The audio is written to a [{filename}]. Exit...")
-                break
-
-            else:
-                print(f"[{com[0]}] is unknown command")
-
-    except KeyboardInterrupt:
-        print("\n\nExit without saving...")
-    finally:
-        ar.close_stream()
-        p.terminate()
-
-    print("end ============= ")

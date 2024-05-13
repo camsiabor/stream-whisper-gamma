@@ -1,14 +1,15 @@
 import asyncio
 import collections
+import logging
 import wave
 from collections import deque
 
 import aioredis
 import pyaudio
 import webrtcvad
-import logging
-from .utils import asyncformer
-from .config import REDIS_SERVER
+
+from src.legacy.config import REDIS_SERVER
+from src.legacy.utils import asyncformer
 
 # Audio recording parameters
 FORMAT = pyaudio.paInt16
