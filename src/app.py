@@ -1,5 +1,5 @@
 import os
-import wave
+import traceback
 
 import pyaudiowpatch as pyaudio
 
@@ -7,7 +7,11 @@ from src import rqueue, rtrans
 from src.recorder import Recorder
 
 if __name__ == "__main__":
+
     print("start =========== ")
+
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
     p = pyaudio.PyAudio()
 
     task_queue = rqueue.RQueue()
@@ -25,14 +29,34 @@ if __name__ == "__main__":
     )
 
     transcriber = rtrans.RTranscriber(
-
         task_queue=task_queue,
-    )
+    ).init(force=True)
 
+    try:
+
+        recorder.start()
+        transcriber.start()
+
+        while True:
+            com = input("Enter command: ").split()
+            if com[0] == "exit":
+                break
+
+        recorder.join()
+        transcriber.join()
+
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt: terminating...")
+    except Exception as e:
+        traceback.print_exc()
+        # logging.error(e, exc_info=True, stack_info=True)
+
+"""
     help_msg = 30 * "-" + ("\n\n\nStatus:\nRunning=%s | Device=%s | output=%s\n\nCommands:\nlist\nrecord {"
                            "device_index\\default}\npause\ncontinue\nstop {*.wav\\default}\n")
 
     device_def = recorder.get_default_wasapi_device()
+
 
     try:
         while True:
@@ -78,3 +102,5 @@ if __name__ == "__main__":
         p.terminate()
 
     print("end ============= ")
+
+"""

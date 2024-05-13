@@ -37,6 +37,7 @@ class Recorder(threading.Thread):
                  output_queue: queue.Queue = queue.Queue(),
                  output_channels: int = 0,
                  sample_rate: int = 0,
+                 device: dict = None,
                  # data_format: int = pyaudio.paInt24,
                  data_format: int = pyaudio.paInt16,
                  chunk_size: int = 1024,  # 512 works
@@ -55,7 +56,7 @@ class Recorder(threading.Thread):
         self.vad.set_mode(1)
 
         self.stream = None
-        self.device = None
+        self.device = device
 
         self.sample_rate = sample_rate
         self.data_format = data_format
@@ -149,20 +150,18 @@ class Recorder(threading.Thread):
         self.output_queue.put(in_data)
         return in_data, pyaudio.paContinue
 
-    def start_recording(self, target_device: dict = None, split: bool = True):
+    def start_recording(self):
 
         self.close_stream()
 
-        if target_device is None:
-            target_device = self.get_default_wasapi_device()
-
-        self.device = target_device
-
-        # stream_callback = split if None else self.stream_callback
+        if self.device is None:
+            self.device = self.get_default_wasapi_device()
 
         device_index = self.device["index"]
         device_channels = self.get_output_channels()
         sample_rate = self.get_sample_rate()
+
+        print(f"[recorder] device: {self.device}")
 
         self.stream = self.p.open(format=self.data_format,
                                   channels=device_channels,
@@ -172,9 +171,6 @@ class Recorder(threading.Thread):
                                   input_device_index=device_index,
                                   # stream_callback=stream_callback
                                   )
-
-        if split:
-            self.splitting()
 
         return self.stream
 
@@ -210,6 +206,11 @@ class Recorder(threading.Thread):
                     frames = self.get_current_frames()
                     self.task_queue.audio.put(frames)
                     # logging.info("audio task number: {}".format(Queues.audio.qsize()))
+
+    def run(self):
+        if self.stream is None:
+            self.start_recording()
+        self.splitting()
 
     def stop_stream(self):
         self.stream.stop_stream()

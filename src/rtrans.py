@@ -36,7 +36,12 @@ class RTranscriber(threading.Thread):
         self.compute_type = compute_type
         self.prompt = prompt
 
-    def __enter__(self) -> 'RTranscriber':
+        self._model = None
+
+    def init(self, force: bool = False) -> 'RTranscriber':
+
+        if self._model is not None and force is False:
+            return self
 
         local_file_only = True if len(self.download_root) > 0 else False
         self._model = WhisperModel(
@@ -46,8 +51,10 @@ class RTranscriber(threading.Thread):
             download_root=self.download_root,
             local_files_only=local_file_only
         )
-
         return self
+
+    def __enter__(self) -> 'RTranscriber':
+        return self.init()
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass
