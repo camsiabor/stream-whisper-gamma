@@ -1,13 +1,24 @@
+import collections
+import datetime
+import io
+import logging
 import os
+import queue
+import threading
 import typing
 import wave
 from queue import Queue
 
 import pyaudiowpatch as pyaudio
+import webrtcvad
 
 
 # import wave
 # import os
+
+class AudioQueue:
+    audio = queue.Queue()
+    text = queue.Queue()
 
 
 class ARException(Exception):
@@ -22,34 +33,75 @@ class InvalidDevice(ARException):
     ...
 
 
-class AudioRecorder:
-    CHUNK_SIZE = 512
+class AudioRecorder(threading.Thread):
 
     def __init__(self,
                  p_audio: pyaudio.PyAudio = pyaudio.PyAudio(),
                  output_queue: Queue = Queue(),
-                 output_channels: int = 1,
-                 sample_rate: int = 16000,
-                 data_format: int = pyaudio.paInt16,
-                 chunk: int = 256,
+                 output_channels: int = 0,
+                 sample_rate: int = 0,
+                 data_format: int = pyaudio.paInt24,
+                 chunk_size: int = 512,
                  frame_duration: int = 30
                  ):
 
+        super().__init__()
+
         self.p = p_audio
         self.output_queue = output_queue
+
+        # 设置 VAD 的敏感度。参数是一个 0 到 3 之间的整数。0 表示对非语音最不敏感，3 最敏感。
+        self.vad = webrtcvad.Vad()
+        self.vad.set_mode(1)
+
         self.stream = None
         self.device = None
 
         self.sample_rate = sample_rate
         self.data_format = data_format
         self.output_channels = output_channels
-        self.chunk = chunk
+        self.chunk_size = chunk_size
         self.frame_size = (sample_rate * frame_duration // 1000)
+
+        self.audio_queue = AudioQueue()
 
         self.__frames: typing.List[bytes] = []
 
-    def get_default_wasapi_device(self):
+    def __enter__(self) -> 'AudioRecorder':
+        pass
 
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close_stream()
+
+    def get_current_frames(self, clear: bool = True) -> bytes:
+        buf = io.BytesIO()
+        with wave.open(buf, 'wb') as wf:
+            wf.setnchannels(self.get_output_channels())
+            wf.setsampwidth(self.get_sample_width())
+            wf.setframerate(self.get_sample_rate())
+            wf.writeframes(b''.join(self.__frames))
+        if clear:
+            self.__frames.clear()
+        return buf.getvalue()
+
+    def to_wav(self, path: str = "", clear=True):
+        if path is None or len(path) <= 0:
+            current_datetime = datetime.datetime.now()
+            datetime_string = current_datetime.strftime("%Y%m%d-%H%M%S.%f")[:-3]
+            path = f"../temp/{datetime_string}.wav"
+
+        path = os.path.abspath(path)
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
+        frames = self.get_current_frames()
+        with open(path, "wb") as file:
+            file.write(frames)
+
+        return path
+
+    def get_default_wasapi_device(self):
         try:  # Get default WASAPI info
             wasapi_info = self.p.get_host_api_info_by_type(pyaudio.paWASAPI)
         except OSError:
@@ -62,34 +114,52 @@ class AudioRecorder:
             for loopback in self.p.get_loopback_device_info_generator():
                 if sys_default_speakers["name"] in loopback["name"]:
                     return loopback
-                    break
             else:
                 raise InvalidDevice(
                     "Default loopback output device not found.\n\nRun `python -m pyaudiowpatch` to check available "
                     "devices")
 
-    def callback(self, in_data, frame_count, time_info, status):
+    def get_sample_width(self):
+        return self.p.get_sample_size(self.data_format)
+
+    def get_sample_rate(self):
+        if self.sample_rate is None or self.sample_rate <= 0:
+            if self.device is not None:
+                self.sample_rate = int(self.device["defaultSampleRate"])
+        return self.sample_rate
+
+    def get_output_channels(self):
+        if self.output_channels is None or self.output_channels <= 0:
+            if self.device is not None:
+                self.output_channels = self.device["maxInputChannels"]
+        return self.output_channels
+
+    def stream_callback(self, in_data, frame_count, time_info, status):
         """Write frames and return PA flag"""
         self.output_queue.put(in_data)
-        return (in_data, pyaudio.paContinue)
+        return in_data, pyaudio.paContinue
 
-    def start_recording(self, target_device: dict, split: bool = True):
+    def start_recording(self, target_device: dict = None, split: bool = True):
 
         self.close_stream()
 
         if target_device is None:
-            target_device = self.get_default_wasapi_device(self.p)
+            target_device = self.get_default_wasapi_device()
 
         self.device = target_device
 
-        stream_callback = split if None else self.callback
+        stream_callback = split if None else self.stream_callback
+
+        device_index = self.device["index"]
+        device_channels = self.get_output_channels()
+        sample_rate = self.get_sample_rate()
 
         self.stream = self.p.open(format=self.data_format,
-                                  channels=target_device["maxInputChannels"],
-                                  rate=int(target_device["defaultSampleRate"]),
-                                  frames_per_buffer=self.CHUNK_SIZE,
+                                  channels=device_channels,
+                                  rate=sample_rate,
+                                  frames_per_buffer=self.chunk_size,
                                   input=True,
-                                  input_device_index=target_device["index"],
+                                  input_device_index=device_index,
                                   stream_callback=stream_callback
                                   )
 
@@ -99,7 +169,32 @@ class AudioRecorder:
         return self.stream
 
     def splitting(self):
-        pass
+        MAXLEN = 30
+        watcher = collections.deque(maxlen=MAXLEN)
+        triggered, ratio = False, 0.5
+        sample_rate = self.get_sample_rate()
+
+        while True:
+            frame = self.stream.read(self.frame_size)
+            is_speech = self.vad.is_speech(frame, sample_rate)
+            watcher.append(is_speech)
+            self.__frames.append(frame)
+            if not triggered:
+                num_voiced = len([x for x in watcher if x])
+                if num_voiced > ratio * watcher.maxlen:
+                    logging.info("start recording...")
+                    triggered = True
+                    watcher.clear()
+                    self.__frames = self.__frames[-MAXLEN:]
+            else:
+                num_unvoiced = len([x for x in watcher if not x])
+                if num_unvoiced > ratio * watcher.maxlen:
+                    logging.info("stop recording...")
+                    triggered = False
+                    self.to_wav()
+                    # frames = self.get_current_frames()
+                    # self.audio_queue.audio.put(frames)
+                    # logging.info("audio task number: {}".format(Queues.audio.qsize()))
 
     def stop_stream(self):
         self.stream.stop_stream()
@@ -118,13 +213,12 @@ class AudioRecorder:
         return "closed" if self.stream is None else "stopped" if self.stream.is_stopped() else "running"
 
 
-if __name__ == 'main':
+if __name__ == "__main__":
     print("start =========== ")
     p = pyaudio.PyAudio()
-    audio_queue = Queue()
+
     ar = AudioRecorder(
         p_audio=p,
-        output_queue=audio_queue,
     )
 
     help_msg = 30 * "-" + ("\n\n\nStatus:\nRunning=%s | Device=%s | output=%s\n\nCommands:\nlist\nrecord {"
@@ -135,12 +229,12 @@ if __name__ == 'main':
     try:
         while True:
             print(help_msg % (
-                ar.stream_status, device_def["index"] if device_def is not None else "None"))
+                ar.stream_status, device_def["index"] if device_def is not None else "None", ""))
             com = input("Enter command: ").split()
             if com[0] == "list":
                 p.print_detailed_system_info()
             elif com[0] == "record":
-                ar.start_recording()
+                ar.start_recording(None, True)
             elif com[0] == "pause":
                 ar.stop_stream()
             elif com[0] == "continue":
@@ -155,12 +249,12 @@ if __name__ == 'main':
                     filename = com[1]
 
                 wave_file = wave.open(filename, 'wb')
-                wave_file.setnchannels(ar.output_channels)
-                wave_file.setsampwidth(pyaudio.get_sample_size(device_def))
-                wave_file.setframerate(int(device_def["defaultSampleRate"]))
+                wave_file.setnchannels(ar.get_output_channels())
+                wave_file.setsampwidth(ar.get_sample_width())
+                wave_file.setframerate(ar.get_sample_rate())
 
-                while not audio_queue.empty():
-                    wave_file.writeframes(audio_queue.get())
+                while not ar.output_queue.empty():
+                    wave_file.writeframes(ar.output_queue.get())
                 wave_file.close()
 
                 print(f"The audio is written to a [{filename}]. Exit...")
