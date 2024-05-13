@@ -1,0 +1,16 @@
+aioredis==2.0.1
+PyAudio==0.2.14
+webrtcvad==2.0.10
+python-dotenv==1.0.0
+faster-whisper==0.10.0
+sounddevice~=0.4.6
+numpy~=1.24.4
+soundfile~=0.12.1
+scipy~=1.10.1
+PyAudioWPatch~=0.2.12.6
+typing~=3.7.4.3
+av~=11.0.0
+fastapi~=0.111.0
+starlette~=0.37.2
+codefast~=24.2.24.10
+openai~=1.26.0
