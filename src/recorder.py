@@ -40,7 +40,8 @@ class AudioRecorder(threading.Thread):
                  output_queue: Queue = Queue(),
                  output_channels: int = 0,
                  sample_rate: int = 0,
-                 data_format: int = pyaudio.paInt24,
+                 # data_format: int = pyaudio.paInt24,
+                 data_format: int = pyaudio.paInt16,
                  chunk_size: int = 512,
                  frame_duration: int = 30
                  ):
@@ -61,7 +62,9 @@ class AudioRecorder(threading.Thread):
         self.data_format = data_format
         self.output_channels = output_channels
         self.chunk_size = chunk_size
-        self.frame_size = (sample_rate * frame_duration // 1000)
+        self.frame_size = 0
+
+        self.frame_duration = frame_duration
 
         self.audio_queue = AudioQueue()
 
@@ -128,6 +131,11 @@ class AudioRecorder(threading.Thread):
                 self.sample_rate = int(self.device["defaultSampleRate"])
         return self.sample_rate
 
+    def get_frame_size(self):
+        sample_rate = self.get_sample_rate()
+        self.frame_size = (sample_rate * self.frame_duration // 1000)
+        return self.frame_size
+
     def get_output_channels(self):
         if self.output_channels is None or self.output_channels <= 0:
             if self.device is not None:
@@ -148,7 +156,7 @@ class AudioRecorder(threading.Thread):
 
         self.device = target_device
 
-        stream_callback = split if None else self.stream_callback
+        # stream_callback = split if None else self.stream_callback
 
         device_index = self.device["index"]
         device_channels = self.get_output_channels()
@@ -160,7 +168,7 @@ class AudioRecorder(threading.Thread):
                                   frames_per_buffer=self.chunk_size,
                                   input=True,
                                   input_device_index=device_index,
-                                  stream_callback=stream_callback
+                                  # stream_callback=stream_callback
                                   )
 
         if split:
@@ -169,13 +177,18 @@ class AudioRecorder(threading.Thread):
         return self.stream
 
     def splitting(self):
-        MAXLEN = 30
+        MAXLEN = 10
         watcher = collections.deque(maxlen=MAXLEN)
         triggered, ratio = False, 0.5
+
+        frame_size = self.get_frame_size()
         sample_rate = self.get_sample_rate()
 
         while True:
-            frame = self.stream.read(self.frame_size)
+            frame = self.stream.read(frame_size, exception_on_overflow=False)
+            print(f"frames len: {len(frame)}")
+            if not frame:
+                continue
             is_speech = self.vad.is_speech(frame, sample_rate)
             watcher.append(is_speech)
             self.__frames.append(frame)
