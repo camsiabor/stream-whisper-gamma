@@ -1,15 +1,23 @@
+import io
 import threading
+import typing
 
+import codefast as cf
 from faster_whisper import WhisperModel
 
+from src import rqueue
 
-class Transcriber(threading.Thread):
+
+class RTranscriber(threading.Thread):
     def __init__(
             self,
-            model_size: str,
-            device: str = "auto",
+            task_queue: rqueue.RQueue,
+            model_size: str = "large-v3",
+            device: str = "cuda",
             compute_type: str = "default",
-            prompt: str = '实时/低延迟语音转写服务，林黛玉、倒拔、杨柳树、鲁迅、周树人、关键词、转写正确') -> None:
+            download_root: str = "../models",
+            prompt: str = 'Greetings!'
+    ) -> None:
         """ FasterWhisper 语音转写
 
         Args:
@@ -20,26 +28,23 @@ class Transcriber(threading.Thread):
             prompt (str, optional): 初始提示。如果需要转写简体中文，可以使用简体中文提示。
         """
         super().__init__()
+        self.task_queue = task_queue
+
         self.model_size = model_size
+        self.download_root = download_root
         self.device = device
         self.compute_type = compute_type
         self.prompt = prompt
 
-    def __enter__(self) -> 'Transcriber':
+    def __enter__(self) -> 'RTranscriber':
 
-        """
-        self._model = WhisperModel(self.model_size,
-                                   device=self.device,
-                                   compute_type=self.compute_type,
-                                   )
-        """
-
+        local_file_only = True if len(self.download_root) > 0 else False
         self._model = WhisperModel(
-            model_size_or_path="large-v3",
-            device="cuda",
-            compute_type="default",
-            download_root="../models",
-            local_files_only=True
+            model_size_or_path=self.model_size,
+            device=self.device,
+            compute_type=self.compute_type,
+            download_root=self.download_root,
+            local_files_only=local_file_only
         )
 
         return self
@@ -48,9 +53,13 @@ class Transcriber(threading.Thread):
         pass
 
     def __call__(self, audio: bytes) -> typing.Generator[str, None, None]:
-        segments, info = self._model.transcribe(BytesIO(audio),
-                                                initial_prompt=self.prompt,
-                                                vad_filter=True)
+
+        segments, info = self._model.transcribe(
+            io.BytesIO(audio),
+            initial_prompt=self.prompt,
+            vad_filter=True
+        )
+
         # if info.language != "zh":
         #     return {"error": "transcribe Chinese only"}
         for segment in segments:
@@ -62,9 +71,9 @@ class Transcriber(threading.Thread):
 
     def run(self):
         while True:
-            audio = Queues.audio.get()
+            audio = self.task_queue.audio.get()
             text = ''
             for seg in self(audio):
-                logging.info(cf.fp.cyan(seg))
+                print(cf.fp.cyan(seg))
                 text += seg
-            Queues.text.put(text)
+            self.task_queue.text.put(text)
