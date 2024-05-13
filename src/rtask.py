@@ -15,8 +15,9 @@ class RTask:
             param=RParam()
     ):
         self.audio = audio
-        self.text_src = ""
-        self.text_des = ""
+        self.text_transcribe = ""
+        self.text_translate = ""
+        self.text_info = None
         self.param = param
 
 

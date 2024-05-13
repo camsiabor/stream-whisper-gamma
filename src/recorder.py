@@ -4,6 +4,7 @@ import io
 import os
 import queue
 import threading
+import traceback
 import typing
 import wave
 
@@ -66,6 +67,8 @@ class Recorder(threading.Thread):
         self.watcher_ratio = watcher_ratio
 
         self.task_ctrl = task_ctrl
+
+        self.do_run = True
 
         self.__frames: typing.List[bytes] = []
 
@@ -170,7 +173,14 @@ class Recorder(threading.Thread):
 
         return self.stream
 
-    def splitting(self):
+    def pack_and_pass(self):
+        frames = self.get_current_frames()
+        task = rtask.RTask(
+            audio=frames,
+        )
+        self.task_ctrl.queue_translate.put(task)
+
+    def monitor(self):
 
         watcher = collections.deque(maxlen=self.watcher_maxlen)
         triggered = False
@@ -178,12 +188,19 @@ class Recorder(threading.Thread):
         frame_size = self.get_frame_size()
         sample_rate = self.get_sample_rate()
 
-        while True:
+        while self.do_run:
             frame = self.stream.read(frame_size, exception_on_overflow=False)
             # print(f"frames len: {len(frame)}")
             if not frame:
                 continue
-            is_speech = self.vad.is_speech(frame, sample_rate)
+
+            try:
+                is_speech = self.vad.is_speech(frame, sample_rate)
+            except Exception as ex:
+                is_speech = True
+                print(f"[recorder] vad.is_speech() failed: {ex}")
+                traceback.print_exc()
+
             watcher.append(is_speech)
             self.__frames.append(frame)
             if not triggered:
@@ -199,19 +216,17 @@ class Recorder(threading.Thread):
                     # logging.info("stop recording...")
                     triggered = False
                     # self.to_wav()
-                    frames = self.get_current_frames()
-
-                    task = rtask.RTask(
-                        audio=frames,
-                    )
-
-                    self.task_ctrl.queue_translate.put(task)
+                    self.pack_and_pass()
                     # logging.info("audio task number: {}".format(Queues.audio.qsize()))
 
     def run(self):
-        if self.stream is None:
-            self.start_recording()
-        self.splitting()
+        try:
+            if self.stream is None:
+                self.start_recording()
+            self.monitor()
+        except Exception:
+            traceback.print_exc()
+
 
     def stop_stream(self):
         self.stream.stop_stream()

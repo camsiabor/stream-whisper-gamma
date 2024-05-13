@@ -1,5 +1,6 @@
 import io
 import threading
+import traceback
 import typing
 
 import codefast as cf
@@ -36,6 +37,8 @@ class RTranscriber(threading.Thread):
         self.compute_type = compute_type
         self.prompt = prompt
 
+        self.do_run = True
+
         self._model = None
 
     def init(self, force: bool = False) -> 'RTranscriber':
@@ -59,13 +62,15 @@ class RTranscriber(threading.Thread):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass
 
-    def __call__(self, audio: bytes) -> typing.Generator[str, None, None]:
+    def __call__(self, task: rtask.RTask) -> typing.Generator[str, None, None]:
 
         segments, info = self._model.transcribe(
-            io.BytesIO(audio),
+            io.BytesIO(task.audio),
             initial_prompt=self.prompt,
             vad_filter=True
         )
+
+        task.text_info = info
 
         # if info.language != "zh":
         #     return {"error": "transcribe Chinese only"}
@@ -77,10 +82,18 @@ class RTranscriber(threading.Thread):
                 yield t
 
     def run(self):
-        while True:
-            audio = self.task_ctrl.audio.get()
-            text = ''
-            for seg in self(audio):
-                print(cf.fp.cyan(seg))
-                text += seg
-            self.task_ctrl.text.put(text)
+        error_count = 0
+        while self.do_run:
+            try:
+                task = self.task_ctrl.queue_transcribe.get()
+                text = ''
+                for seg in self(task.audio):
+                    print(cf.fp.cyan(seg))
+                    text += seg
+                self.task_ctrl.queue_translate.put(text)
+            except Exception:
+                traceback.print_exc()
+                if error_count > 3:
+                    print("[transcriber] error_count > 3, breaking...")
+                    break
+                error_count += 1

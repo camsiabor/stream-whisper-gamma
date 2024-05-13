@@ -3,7 +3,7 @@ import traceback
 
 import pyaudiowpatch as pyaudio
 
-from src import rtask, rtrans
+from src import rtask, rtranscribe
 from src.recorder import Recorder
 
 if __name__ == "__main__":
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         watcher_maxlen=6,
     )
 
-    transcriber = rtrans.RTranscriber(
+    transcriber = rtranscribe.RTranscriber(
         task_ctrl=task_ctrl,
         device="cuda",
     ).init(force=True)

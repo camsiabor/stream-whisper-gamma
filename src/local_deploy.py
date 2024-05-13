@@ -15,6 +15,7 @@ import logging
 import os
 import queue
 import threading
+import traceback
 import typing
 import wave
 from io import BytesIO
@@ -211,6 +212,7 @@ def main():
     except KeyboardInterrupt:
         print("KeyboardInterrupt: terminating...")
     except Exception as e:
+        traceback.print_exc()
         logging.error(e, exc_info=True, stack_info=True)
 
 
