@@ -28,13 +28,15 @@ if __name__ == "__main__":
     slicer = rslice.RSlice(
         task_ctrl=task_ctrl,
         # watcher max len, 10 works pretty well
-        slicer_maxlen=10,
+        slicer_maxlen=30,
         slicer_ratio=0.5,
     )
 
     transcriber = rtranscribe.RTranscriber(
         task_ctrl=task_ctrl,
         device="cuda",
+        # prompt="hello",
+        prompt="こんにちは",
     ).init(force=True)
 
     translater = rtranslate.RTranslator(

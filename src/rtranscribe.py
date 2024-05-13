@@ -16,7 +16,7 @@ class RTranscriber(threading.Thread):
             device: str = "cuda",
             compute_type: str = "default",
             download_root: str = "../models",
-            prompt: str = 'Greetings!'
+            prompt: str = 'hello'
     ) -> None:
         """ FasterWhisper 语音转写
 
@@ -65,6 +65,7 @@ class RTranscriber(threading.Thread):
 
         segments, info = self._model.transcribe(
             io.BytesIO(task.audio),
+
             initial_prompt=self.prompt,
             vad_filter=True
         )
