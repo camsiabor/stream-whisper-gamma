@@ -3,8 +3,7 @@ import traceback
 
 import pyaudiowpatch as pyaudio
 
-from src import rtask, rtranscribe, rtranslate, rmanifest
-from src.recorder import Recorder
+from src import rtask, rtranscribe, rtranslate, rmanifest, rrecord, rslice
 
 if __name__ == "__main__":
 
@@ -16,16 +15,21 @@ if __name__ == "__main__":
 
     task_ctrl = rtask.RTaskControl()
 
-    recorder = Recorder(
+    recorder = rrecord.Recorder(
         p_audio=p,
         # 512 works
         task_ctrl=task_ctrl,
         # 512 works too
         chunk_size=4096,
         # ONLY 10 works
-        frame_duration=15,
+        frame_duration=10,
+    )
+
+    slicer = rslice.RSlice(
+        task_ctrl=task_ctrl,
         # watcher max len, 10 works pretty well
-        watcher_maxlen=6,
+        slicer_maxlen=10,
+        slicer_ratio=0.5,
     )
 
     transcriber = rtranscribe.RTranscriber(
