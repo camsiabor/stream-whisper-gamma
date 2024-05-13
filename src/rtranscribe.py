@@ -16,10 +16,9 @@ class RTranscriber(threading.Thread):
             device: str = "cuda",
             compute_type: str = "default",
             download_root: str = "../models",
-            prompt: str = 'hello'
+            prompt: str = 'transcriber here'
     ) -> None:
         """ FasterWhisper 语音转写
-
         Args:
             model_size (str): 模型大小，可选项为 "tiny", "base", "small", "medium", "large" 。
                 更多信息参考：https://github.com/openai/whisper

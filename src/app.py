@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
     translater = rtranslate.RTranslator(
         task_ctrl=task_ctrl,
+        lang_des="en",
     )
 
     renderer = rmanifest.RManifest(

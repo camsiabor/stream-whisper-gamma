@@ -12,3 +12,11 @@ https://github.com/jianchang512/pyvideotrans/
 # whisper
 
 # https://wandb.ai/wandb_fc/gentle-intros/reports/OpenAI-Whisper-How-to-Transcribe-Your-Audio-to-Text-for-Free-with-SRTs-VTTs---VmlldzozNDczNTI0
+
+#
+
+https://new.oaifree.com/
+
+#
+
+https://opennmt.net/CTranslate2/quickstart.html
