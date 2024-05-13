@@ -239,6 +239,8 @@ if __name__ == "__main__":
         chunk_size=4096,
         # ONLY 10 works
         frame_duration=15,
+        # watcher max len, 10 works pretty well
+        watcher_maxlen=10,
     )
 
     help_msg = 30 * "-" + ("\n\n\nStatus:\nRunning=%s | Device=%s | output=%s\n\nCommands:\nlist\nrecord {"
