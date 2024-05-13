@@ -37,7 +37,7 @@ if __name__ == "__main__":
         device="cuda",
     ).init(force=True)
 
-    translater = rtranslate.RTranslater(
+    translater = rtranslate.RTranslator(
         task_ctrl=task_ctrl,
     )
 

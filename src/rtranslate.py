@@ -4,7 +4,7 @@ import traceback
 from src import rtask
 
 
-class RTranslater(threading.Thread):
+class RTranslator(threading.Thread):
 
     def __init__(
             self,

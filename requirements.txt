@@ -1,5 +1,5 @@
 aioredis==2.0.1
-PyAudio==0.2.14
+# PyAudio==0.2.14
 webrtcvad==2.0.10
 python-dotenv==1.0.0
 faster-whisper==0.10.0
@@ -14,3 +14,9 @@ fastapi~=0.111.0
 starlette~=0.37.2
 codefast~=24.2.24.10
 openai~=1.26.0
+PyAudio~=0.2.14
+sounddevice~=0.4.6
+numpy~=1.24.4
+scipy~=1.10.1
+requests~=2.31.0
+urllib3~=2.2.1
