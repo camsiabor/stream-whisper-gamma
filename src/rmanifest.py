@@ -19,9 +19,9 @@ class RManifest(threading.Thread):
         error_count = 0
         while self.do_run:
             try:
-                task: rtask.RTask = self.task_ctrl.queue_render.get()
-                text_target = None
-                if task.text_translate is None:
+                task: rtask.RTask = self.task_ctrl.queue_manifest.get()
+                text_target = task.text_translate
+                if text_target is None or len(text_target) <= 0:
                     text_target = task.text_transcribe
 
                 if text_target is None or len(text_target) <= 0:

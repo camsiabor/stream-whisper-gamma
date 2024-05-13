@@ -38,4 +38,4 @@ class RTaskControl:
     queue_slice = queue.Queue()
     queue_transcribe = queue.Queue()
     queue_translate = queue.Queue()
-    queue_render = queue.Queue()
+    queue_manifest = queue.Queue()

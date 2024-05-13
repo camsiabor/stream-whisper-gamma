@@ -3,7 +3,6 @@ import threading
 import traceback
 import typing
 
-import codefast as cf
 from faster_whisper import WhisperModel
 
 from src import rtask
@@ -87,10 +86,15 @@ class RTranscriber(threading.Thread):
         while self.do_run:
             try:
                 task = self.task_ctrl.queue_transcribe.get()
+                if not task.audio or task.audio is None:
+                    continue
                 text = ''
                 for seg in self(task):
-                    print(cf.fp.cyan(seg))
+                    # print(cf.fp.cyan(seg))
                     text += seg
+                if len(text) <= 0:
+                    continue
+
                 task.text_transcribe = text
                 self.task_ctrl.queue_translate.put(task)
             except Exception:
