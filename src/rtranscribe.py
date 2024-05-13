@@ -88,10 +88,11 @@ class RTranscriber(threading.Thread):
             try:
                 task = self.task_ctrl.queue_transcribe.get()
                 text = ''
-                for seg in self(task.audio):
+                for seg in self(task):
                     print(cf.fp.cyan(seg))
                     text += seg
-                self.task_ctrl.queue_translate.put(text)
+                task.text_transcribe = text
+                self.task_ctrl.queue_translate.put(task)
             except Exception:
                 traceback.print_exc()
                 if error_count > 3:

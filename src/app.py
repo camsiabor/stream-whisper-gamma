@@ -50,18 +50,21 @@ if __name__ == "__main__":
         renderer.start()
         translater.start()
         transcriber.start()
+        slicer.start()
         recorder.start()
 
         while True:
             com = input("Enter command: ").split()
             if com[0] == "exit":
                 recorder.do_run = False
+                slicer.do_run = False
                 transcriber.do_run = False
                 translater.do_run = False
                 renderer.do_run = False
                 break
 
         recorder.join()
+        slicer.join()
         transcriber.join()
         translater.join()
         renderer.join()
