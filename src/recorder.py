@@ -42,8 +42,9 @@ class AudioRecorder(threading.Thread):
                  sample_rate: int = 0,
                  # data_format: int = pyaudio.paInt24,
                  data_format: int = pyaudio.paInt16,
-                 chunk_size: int = 512,
-                 frame_duration: int = 30
+                 chunk_size: int = 1024,  # 512 works
+                 frame_duration: int = 10,  # 10 works
+                 watcher_maxlen: int = 10,
                  ):
 
         super().__init__()
@@ -65,6 +66,8 @@ class AudioRecorder(threading.Thread):
         self.frame_size = 0
 
         self.frame_duration = frame_duration
+
+        self.watcher_maxlen = watcher_maxlen
 
         self.audio_queue = AudioQueue()
 
@@ -133,7 +136,7 @@ class AudioRecorder(threading.Thread):
 
     def get_frame_size(self):
         sample_rate = self.get_sample_rate()
-        self.frame_size = (sample_rate * self.frame_duration // 1000)
+        self.frame_size = (sample_rate * self.frame_duration) // 1000
         return self.frame_size
 
     def get_output_channels(self):
@@ -177,8 +180,8 @@ class AudioRecorder(threading.Thread):
         return self.stream
 
     def splitting(self):
-        MAXLEN = 10
-        watcher = collections.deque(maxlen=MAXLEN)
+
+        watcher = collections.deque(maxlen=self.watcher_maxlen)
         triggered, ratio = False, 0.5
 
         frame_size = self.get_frame_size()
@@ -198,7 +201,7 @@ class AudioRecorder(threading.Thread):
                     logging.info("start recording...")
                     triggered = True
                     watcher.clear()
-                    self.__frames = self.__frames[-MAXLEN:]
+                    self.__frames = self.__frames[-self.watcher_maxlen:]
             else:
                 num_unvoiced = len([x for x in watcher if not x])
                 if num_unvoiced > ratio * watcher.maxlen:
@@ -232,6 +235,10 @@ if __name__ == "__main__":
 
     ar = AudioRecorder(
         p_audio=p,
+        # 512 works
+        chunk_size=4096,
+        # ONLY 10 works
+        frame_duration=15,
     )
 
     help_msg = 30 * "-" + ("\n\n\nStatus:\nRunning=%s | Device=%s | output=%s\n\nCommands:\nlist\nrecord {"
