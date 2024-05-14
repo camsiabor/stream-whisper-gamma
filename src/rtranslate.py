@@ -35,7 +35,7 @@ class RTranslator(threading.Thread):
         self.configure_google(cfg)
 
     def configure_google(self, cfg):
-        google_cfg = sim.get(cfg, None, "agent_google")
+        google_cfg = sim.get(cfg, None, "translator", "agent_google")
         if google_cfg is None:
             return
         if not sim.get(google_cfg, True, "active"):
