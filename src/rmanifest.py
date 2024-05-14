@@ -27,9 +27,11 @@ class RManifest(threading.Thread):
                 if text_target is None or len(text_target) <= 0:
                     continue
 
-                print(f"[dur] {task.text_info.duration} ------------------------------------------------")
-                print(f"[src] {task.text_transcribe}")
-                print(f"[des] {text_target}")
+                # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
+
+                print(f"[{task.text_info.duration}] ------------------------------------------------")
+                print(f"[s] {task.text_transcribe}")
+                print(f"[d] {text_target}")
 
             except Exception:
                 traceback.print_exc()
