@@ -68,15 +68,33 @@ class RTranslator(threading.Thread):
             return
         self.agent_poe_map = bot_map
 
-    def poe_get_bot(self, lang):
+    def poe_get_bot_id(self, lang):
         bot_id = self.agent_poe_map.get(lang, None)
         if bot_id is not None:
             return bot_id
         return self.agent_poe_map.get(lang, "all")
 
-    def translate(self, text, lang_src):
+    def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
             return text
+
+        ret = ""
+
+        if self.agent_poe is not None:
+            bot_id = self.poe_get_bot_id(lang_src)
+            res = self.agent_poe.send_message(bot_id, f"translate '{text}' into {self.lang_des}")
+            chunk = None
+            for chunk in res:
+                pass
+            ret = chunk["text"]
+
+        if self.agent_google is not None:
+            ret = self.agent_google.translate(
+                task.text_transcribe,
+                self.lang_des, lang_src
+            )
+
+        return ret
 
 
     def run(self):
@@ -91,6 +109,7 @@ class RTranslator(threading.Thread):
                 task.text_translate = self.translate(
                     task.text_translate,
                     task.text_info.language,
+                    task,
                 )
 
                 self.task_ctrl.queue_manifest.put(task)
