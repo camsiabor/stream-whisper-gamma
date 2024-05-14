@@ -26,6 +26,9 @@ class RTask:
         self.text_translate = ""
         self.text_info = None
 
+        self.text_start = "",
+        self.text_end = "",
+
         self.param = param
         self.param.sample_rate = sample_rate
         self.param.sample_width = sample_width

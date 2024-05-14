@@ -79,6 +79,8 @@ class RTranscriber(threading.Thread):
         #     return {"error": "transcribe Chinese only"}
         for segment in segments:
             t = segment.text
+            task.text_start = segment.start
+            task.text_end = segment.end
             if self.prompt in t.strip():
                 continue
             if t.strip().replace('.', ''):

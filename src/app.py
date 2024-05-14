@@ -2,6 +2,7 @@ import os
 import traceback
 
 import pyaudiowpatch as pyaudio
+import yaml
 
 from src import rtask, rtranscribe, rtranslate, rmanifest, rrecord, rslice
 
@@ -11,6 +12,9 @@ if __name__ == "__main__":
 
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+    with open('../config/def.yaml', 'r') as config_file:
+        cfg = yaml.safe_load(config_file)
+
     p = pyaudio.PyAudio()
 
     task_ctrl = rtask.RTaskControl()
@@ -19,32 +23,36 @@ if __name__ == "__main__":
         p_audio=p,
         # 512 works
         task_ctrl=task_ctrl,
+        #
+        data_format=cfg['recorder'].get('data_format', pyaudio.paInt16),
         # 512 works too
-        chunk_size=4096,
-        # ONLY 10 works
-        frame_duration=10,
+        chunk_size=cfg['recorder'].get('chunk_size', 512),
+        # ONLY 10 works in 48000 sample rate
+        frame_duration=cfg['recorder'].get('frame_duration', 10),
+
     )
 
     slicer = rslice.RSlice(
         task_ctrl=task_ctrl,
         # watcher max len, 10 works pretty well
-        slicer_maxlen=10,
-        slicer_ratio=0.5,
+        slicer_maxlen=cfg['slicer'].get('slicer_maxlen', 10),
+        slicer_ratio=cfg['slicer'].get('slicer_ratio', 0.5),
     )
 
     transcriber = rtranscribe.RTranscriber(
         task_ctrl=task_ctrl,
-        model_size="zh-plus/faster-whisper-large-v2-japanese-5k-steps",
-        local_files_only=True,
-        device="cuda",
+        # model_size="large-v3",
+        model_size=cfg['transcriber'].get('model_size', 'large-v3'),
+        local_files_only=cfg['transcriber'].get('local_files_only', False),
+        device=cfg['transcriber'].get('device', 'auto'),
         # prompt="hello",
-        prompt="こんにちは",
+        prompt=cfg['transcriber'].get('prompt', 'hello world'),
 
     ).init(force=True)
 
     translater = rtranslate.RTranslator(
         task_ctrl=task_ctrl,
-        lang_des="zh",
+        lang_des=cfg['translater'].get('lang_des', 'en'),
     )
 
     renderer = rmanifest.RManifest(

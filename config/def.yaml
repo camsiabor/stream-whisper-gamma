@@ -1,0 +1,19 @@
+recorder:
+  chunk_size: 4096
+  frame_duration: 10
+
+slicer:
+  slicer_maxlen: 30
+  slicer_ratio: 0.5
+
+transcriber:
+  model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
+  local_files_only: true
+  device: "cuda"
+  prompt: "こんにちは"
+
+translater:
+  lang_des: "zh"
+
+renderer:
+  console: true
