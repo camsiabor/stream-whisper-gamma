@@ -20,3 +20,7 @@ https://new.oaifree.com/
 #
 
 https://opennmt.net/CTranslate2/quickstart.html
+
+#
+
+https://www.codewithgpu.com/image

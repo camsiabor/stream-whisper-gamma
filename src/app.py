@@ -35,7 +35,7 @@ if __name__ == "__main__":
     transcriber = rtranscribe.RTranscriber(
         task_ctrl=task_ctrl,
         model_size="zh-plus/faster-whisper-large-v2-japanese-5k-steps",
-        local_files_only=False,
+        local_files_only=True,
         device="cuda",
         # prompt="hello",
         prompt="こんにちは",
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     translater = rtranslate.RTranslator(
         task_ctrl=task_ctrl,
-        lang_des="en",
+        lang_des="zh",
     )
 
     renderer = rmanifest.RManifest(
