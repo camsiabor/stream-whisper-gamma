@@ -65,6 +65,8 @@ class RListener(threading.Thread):
         self.task_ctrl.queue_command.put("exit")
 
     def run(self):
+
+        print("[listener] start")
         try:
             self.configure_recorder()
             self.configure_slicer()
@@ -91,3 +93,5 @@ class RListener(threading.Thread):
             print("KeyboardInterrupt: terminating...")
         except Exception as e:
             traceback.print_exc()
+        finally:
+            print("[listener] end")
