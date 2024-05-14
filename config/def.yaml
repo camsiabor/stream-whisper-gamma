@@ -17,7 +17,7 @@ transcriber:
 translator:
   lang_des: "en"
   agent_google:
-    active: false
+    active: true
     domain: "hk"
     timeout: 5
   agent_poe:

@@ -76,34 +76,46 @@ class RTranslator(threading.Thread):
             return bot_id
         return self.agent_poe_map.get("all")
 
+    def translate_poe(self, text, lang_src):
+        bot_id = self.poe_get_bot_id(lang_src)
+
+        src_name = lang.LANGUAGES[lang_src]
+        des_name = lang.LANGUAGES[self.lang_des]
+
+        question = f"from {src_name} to {des_name}: {text}"
+        res = self.agent_poe.send_message(
+            bot_id, question
+        )
+
+        if res is None:
+            raise Exception("[translator] poe response is None")
+
+        chunk = None
+        for chunk in res:
+            pass
+        return chunk["text"]
+
+    def translate_google(self, text, lang_src):
+        return self.agent_google.translate(
+            text, self.lang_des, lang_src
+        )
+
     def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
             return text
 
         ret = ""
 
-        if self.agent_poe is not None:
-            bot_id = self.poe_get_bot_id(lang_src)
+        if len(ret) <= 0 and self.agent_poe is not None:
+            try:
+                ret = self.translate_poe(text, lang_src)
+            except Exception:
+                traceback.print_exc()
 
-            lang_name = lang.LANGUAGES[self.lang_des]
-
-            question = f"translate to {lang_name}: {text}"
-            res = self.agent_poe.send_message(
-                bot_id, question
-            )
-            chunk = None
-            for chunk in res:
-                pass
-            ret = chunk["text"]
-
-        if self.agent_google is not None:
-            ret = self.agent_google.translate(
-                task.text_transcribe,
-                self.lang_des, lang_src
-            )
+        if len(ret) <= 0 and self.agent_google is not None:
+            ret = self.translate_google(text, lang_src)
 
         return ret
-
 
     def run(self):
         print("[translator] running")
