@@ -37,13 +37,16 @@ class RTranslator(threading.Thread):
                 # task.text_translate = task.text_transcribe
 
                 lang_ori = task.text_info.language
-                task.text_translate = self.agent_google.translate(
-                    task.text_transcribe,
-                    self.lang_des, lang_ori,
-                )
+
+                if lang_ori == self.lang_des:
+                    task.text_translate = task.text_transcribe
+                else:
+                    task.text_translate = self.agent_google.translate(
+                        task.text_transcribe,
+                        self.lang_des, lang_ori,
+                    )
 
                 self.task_ctrl.queue_manifest.put(task)
-
             except Exception:
                 traceback.print_exc()
                 if error_count > 100:

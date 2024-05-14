@@ -16,6 +16,7 @@ class RTranscriber(threading.Thread):
             device: str = "cuda",
             compute_type: str = "default",
             download_root: str = "../models",
+            local_files_only: bool = True,
             prompt: str = 'transcriber here'
     ) -> None:
         """ FasterWhisper 语音转写
@@ -31,8 +32,11 @@ class RTranscriber(threading.Thread):
 
         self.model_size = model_size
         self.download_root = download_root
+        self.local_files_only = local_files_only
+
         self.device = device
         self.compute_type = compute_type
+
         self.prompt = prompt
 
         self.do_run = True
@@ -44,13 +48,13 @@ class RTranscriber(threading.Thread):
         if self._model is not None and force is False:
             return self
 
-        local_file_only = True if len(self.download_root) > 0 else False
+        # local_file_only = True if len(self.download_root) > 0 else False
         self._model = WhisperModel(
             model_size_or_path=self.model_size,
             device=self.device,
             compute_type=self.compute_type,
             download_root=self.download_root,
-            local_files_only=local_file_only
+            local_files_only=self.local_files_only
         )
         return self
 
