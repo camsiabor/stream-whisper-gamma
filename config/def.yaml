@@ -14,8 +14,21 @@ transcriber:
   # prompt: "hello"
   prompt: "こんにちは"
 
-translater:
+translator:
   lang_des: "en"
+  agent_google:
+    active: false
+    domain: "hk"
+    timeout: 5
+  agent_poe:
+    active: true
 
 renderer:
   console: true
+
+poe:
+  token:
+    b: "token"
+    lat: "token"
+  translate:
+    all: "bot_id"

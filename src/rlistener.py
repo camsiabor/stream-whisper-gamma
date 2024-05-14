@@ -16,12 +16,12 @@ class RListener(threading.Thread):
             self.p = pyaudio.PyAudio()
         self.cfg = cfg
 
-        self.task_ctrl = rtask.RTaskControl()
+        self.task_ctrl = rtask.RTaskControl(cfg)
 
         self.recorder = None
         self.slicer = None
         self.transcriber = None
-        self.translater = None
+        self.translator = None
         self.renderer = None
 
     def configure_recorder(self):
@@ -49,10 +49,10 @@ class RListener(threading.Thread):
             prompt=self.cfg['transcriber'].get('prompt', 'hello world'),
         ).init(force=True)
 
-    def configure_translater(self):
-        self.translater = rtranslate.RTranslator(
+    def configure_translator(self):
+        self.translator = rtranslate.RTranslator(
             task_ctrl=self.task_ctrl,
-            lang_des=self.cfg['translater'].get('lang_des', 'en'),
+            lang_des=self.cfg['translator'].get('lang_des', 'en'),
         )
 
     def configure_renderer(self):
@@ -71,11 +71,11 @@ class RListener(threading.Thread):
             self.configure_recorder()
             self.configure_slicer()
             self.configure_transcriber()
-            self.configure_translater()
+            self.configure_translator()
             self.configure_renderer()
 
             self.renderer.start()
-            self.translater.start()
+            self.translator.start()
             self.transcriber.start()
             self.slicer.start()
             self.recorder.start()
@@ -86,7 +86,7 @@ class RListener(threading.Thread):
                     continue
 
                 if cmd.action == "exit":
-                    self.task_ctrl.end_all()
+                    self.task_ctrl.terminate()
                     break
 
         except KeyboardInterrupt:

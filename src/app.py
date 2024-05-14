@@ -12,7 +12,11 @@ if __name__ == "__main__":
 
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-    with open('../config/def.yaml', mode='r', encoding='utf-8') as config_file:
+    config_path = "../config/def.yaml"
+    if os.path.exists("../config/cfg.yaml"):
+        config_path = "../config/cfg.yaml"
+
+    with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
 
     p = pyaudio.PyAudio()

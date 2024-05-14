@@ -50,16 +50,18 @@ class RTask:
 
 
 class RTaskControl:
+
     queue_command = queue.Queue()
     queue_slice = queue.Queue()
     queue_transcribe = queue.Queue()
     queue_translate = queue.Queue()
     queue_manifest = queue.Queue()
 
-    def __init__(self):
+    def __init__(self, cfg):
+        self.cfg = cfg
         pass
 
-    def end_all(self):
+    def terminate(self):
         self.queue_command.put("exit")
         self.queue_slice.put(None)
         self.queue_transcribe.put(None)

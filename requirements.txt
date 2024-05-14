@@ -20,3 +20,7 @@ numpy~=1.24.4
 scipy~=1.10.1
 requests~=2.31.0
 urllib3~=2.2.1
+poe-api-wrapper~=1.4.1
+PyYAML~=6.0.1
+loguru~=0.7.2
+nest_asyncio~=1.6.0
