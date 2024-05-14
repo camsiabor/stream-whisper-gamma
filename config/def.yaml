@@ -7,13 +7,15 @@ slicer:
   slicer_ratio: 0.5
 
 transcriber:
+  # model_size: Systran/faster-whisper-large-v3
   model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   local_files_only: true
   device: "cuda"
+  # prompt: "hello"
   prompt: "こんにちは"
 
 translater:
-  lang_des: "zh"
+  lang_des: "en"
 
 renderer:
   console: true
