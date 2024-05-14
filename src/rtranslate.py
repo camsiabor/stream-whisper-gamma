@@ -5,7 +5,7 @@ import poe_api_wrapper
 
 import src.service.google.translator
 from src import rtask
-from src.common import sim
+from src.common import sim, lang
 
 
 class RTranslator(threading.Thread):
@@ -38,7 +38,7 @@ class RTranslator(threading.Thread):
         google_cfg = sim.get(cfg, None, "agent_google")
         if google_cfg is None:
             return
-        if sim.get(google_cfg, True, "active"):
+        if not sim.get(google_cfg, True, "active"):
             return
         domain = sim.get(google_cfg, "hk", "domain")
         timeout = sim.get(google_cfg, 5, "timeout")
@@ -48,11 +48,13 @@ class RTranslator(threading.Thread):
         )
 
     def configure_poe(self, cfg):
-        poe_cfg = sim.get(cfg, None, "agent_poe")
-        if poe_cfg is None:
+        agent_cfg = sim.get(cfg, None, "translator", "agent_poe")
+        if agent_cfg is None:
             return
-        if sim.get(poe_cfg, True, "active"):
+        if not sim.get(agent_cfg, True, "active"):
             return
+
+        poe_cfg = sim.get(cfg, None, "poe")
         token = sim.get(poe_cfg, None, "token")
         if token is None:
             print("[translator] poe token not found !")
@@ -72,7 +74,7 @@ class RTranslator(threading.Thread):
         bot_id = self.agent_poe_map.get(lang, None)
         if bot_id is not None:
             return bot_id
-        return self.agent_poe_map.get(lang, "all")
+        return self.agent_poe_map.get("all")
 
     def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
@@ -82,7 +84,13 @@ class RTranslator(threading.Thread):
 
         if self.agent_poe is not None:
             bot_id = self.poe_get_bot_id(lang_src)
-            res = self.agent_poe.send_message(bot_id, f"translate '{text}' into {self.lang_des}")
+
+            lang_name = lang.LANGUAGES[self.lang_des]
+
+            question = f"translate to {lang_name}: {text}"
+            res = self.agent_poe.send_message(
+                bot_id, question
+            )
             chunk = None
             for chunk in res:
                 pass
@@ -107,7 +115,7 @@ class RTranslator(threading.Thread):
                     continue
 
                 task.text_translate = self.translate(
-                    task.text_translate,
+                    task.text_transcribe,
                     task.text_info.language,
                     task,
                 )
