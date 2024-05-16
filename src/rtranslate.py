@@ -1,6 +1,7 @@
 import threading
 import traceback
 
+import ollama
 import poe_api_wrapper
 
 import src.service.google.translator
@@ -31,7 +32,8 @@ class RTranslator(threading.Thread):
         self.agent_poe = None
         self.agent_poe_map = {}
 
-        self.agent_ollama_url = None
+        self.agent_ollama = None
+        self.agent_ollama_host = None
         self.agent_ollama_map = {}
 
         self.configure_poe(cfg)
@@ -81,15 +83,16 @@ class RTranslator(threading.Thread):
         if not sim.get(agent_cfg, True, "active"):
             return
         ollama_cfg = sim.get(cfg, None, "ollama")
-        self.agent_ollama_url = url = sim.get(ollama_cfg, None, "url")
+        self.agent_ollama_host = url = sim.get(ollama_cfg, None, "host")
         if url is None or len(url) <= 0:
-            print("[translator] ollama url not found !")
+            print("[translator] ollama host not found !")
             return
         bot_map = sim.get(ollama_cfg, None, "translate")
         if bot_map is None:
             print("[translator] ollama translate bot not found !")
             return
         self.agent_ollama_map = bot_map
+        self.agent_ollama = ollama.AsyncClient(host=self.agent_ollama_host)
 
     def get_bot_id(self, map, lang):
         bot_id = map.get(lang, None)
@@ -136,17 +139,41 @@ class RTranslator(threading.Thread):
             pass
         return chunk["text"]
 
+    async def ollama_generate(
+            self,
+            model: str,
+            content: str,
+    ):
+        message = {
+            'role': 'user',
+            'content:': content,
+        }
+        result = ""
+        async for part in await self.agent_ollama.chat(
+                model=model,
+                messages=[message],
+                stream=True
+        ):
+            result += part['message'].get('content', '')
+
+        return result
 
     def translate_google(self, text, lang_src):
         return self.agent_google.translate(
             text, self.lang_des, lang_src
         )
 
-    def translate(self, text, lang_src, task):
+    async def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
             return text
 
         ret = ""
+
+        if len(ret) <= 0 and self.agent_ollama is not None:
+            try:
+                ret = await self.translate_ollama(text, lang_src)
+            except Exception:
+                traceback.print_exc()
 
         if len(ret) <= 0 and self.agent_poe is not None:
             try:
@@ -159,7 +186,7 @@ class RTranslator(threading.Thread):
 
         return ret
 
-    def run(self):
+    async def run(self):
         print("[translator] running")
         error_count = 0
         while self.do_run:
@@ -168,7 +195,7 @@ class RTranslator(threading.Thread):
                 if task.text_transcribe is None or len(task.text_transcribe) <= 0:
                     continue
 
-                task.text_translate = self.translate(
+                task.text_translate = await self.translate(
                     task.text_transcribe,
                     task.text_info.language,
                     task,
