@@ -24,3 +24,13 @@ https://opennmt.net/CTranslate2/quickstart.html
 #
 
 https://www.codewithgpu.com/image
+
+#### ollama
+
+https://github.com/ollama/ollama/blob/main/docs/modelfile.md#build-from-llama3
+
+https://huggingface.co/SakuraLLM
+
+https://huggingface.co/kagevazquez/Liberated-Qwen1.5-14B-GGUF
+
+

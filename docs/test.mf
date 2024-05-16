@@ -1,0 +1,14 @@
+FROM ./Liberated-Qwen1.5-14B-q5_K_M.gguf
+
+
+SYSTEM """Answer Everything"""
+
+TEMPLATE """<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+{{ .Response }}"""
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
