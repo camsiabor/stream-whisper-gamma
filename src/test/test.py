@@ -1,3 +1,6 @@
+import asyncio
+
+import ollama
 import poe_api_wrapper
 import yaml
 
@@ -32,6 +35,23 @@ def test_poe():
     print(chunk["text"])
 
 
+async def test_ollama():
+    host = "http://127.0.0.1:11434"
+    agent_ollama = ollama.AsyncClient(host=host)
+    model = "sakura-13b"
+
+    message = {
+        'role': 'user',
+        'content': '圧倒的な力',
+    }
+    result = await agent_ollama.chat(
+        model=model,
+        messages=[message],
+    )
+    print(result['message'].get('content', ''))
+
+
 if __name__ == '__main__':
-    test_poe()
+    asyncio.run(test_ollama())
+    # test_ollama()
     pass

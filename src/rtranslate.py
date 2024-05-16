@@ -1,3 +1,4 @@
+import asyncio
 import threading
 import traceback
 
@@ -119,44 +120,39 @@ class RTranslator(threading.Thread):
             pass
         return chunk["text"]
 
-    def translate_ollama(self, text, lang_src):
-        bot_id = self.agent_ollama_map.get(self.agent_ollama_map, lang_src)
+    async def translate_ollama(
+            self,
+            text,
+            lang_src
+    ):
+        model = self.get_bot_id(self.agent_ollama_map, lang_src)
 
         src_name = lang.LANGUAGES[lang_src]
         des_name = lang.LANGUAGES[self.lang_des]
 
-        prompt = f"translate {src_name} to {des_name} and return only the translated text: {text}"
+        if 'sakura' in model:
+            content = text
+        else:
+            content = f"translate {src_name} to {des_name} and return only the translated text: {text}"
 
-        res = self.agent_ollama.send_message(
-            bot_id, prompt
-        )
-
-        if res is None:
-            raise Exception("[translator] ollama response is None")
-
-        chunk = None
-        for chunk in res:
-            pass
-        return chunk["text"]
-
-    async def ollama_generate(
-            self,
-            model: str,
-            content: str,
-    ):
         message = {
             'role': 'user',
-            'content:': content,
+            'content': content,
         }
-        result = ""
+        result = await self.agent_ollama.chat(
+            model=model,
+            messages=[message],
+        )
+        """
         async for part in await self.agent_ollama.chat(
                 model=model,
                 messages=[message],
                 stream=True
         ):
             result += part['message'].get('content', '')
+        """
 
-        return result
+        return sim.get(result, '', 'message', 'content')
 
     def translate_google(self, text, lang_src):
         return self.agent_google.translate(
@@ -186,9 +182,19 @@ class RTranslator(threading.Thread):
 
         return ret
 
-    async def run(self):
+    async def warmup(self):
+        if self.agent_ollama is not None:
+            await self.translate_ollama("hello", "en")
+
+    async def cycle(self):
         print("[translator] running")
         error_count = 0
+
+        try:
+            await self.warmup()
+        except Exception:
+            traceback.print_exc()
+
         while self.do_run:
             try:
                 task: rtask.RTask = self.task_ctrl.queue_translate.get()
@@ -209,3 +215,9 @@ class RTranslator(threading.Thread):
                     break
                 error_count += 1
         print("[translator] end")
+
+    def run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.cycle())
+        loop.close()
