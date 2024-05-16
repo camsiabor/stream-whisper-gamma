@@ -31,7 +31,11 @@ class RTranslator(threading.Thread):
         self.agent_poe = None
         self.agent_poe_map = {}
 
+        self.agent_ollama_url = None
+        self.agent_ollama_map = {}
+
         self.configure_poe(cfg)
+        self.configure_ollama(cfg)
         self.configure_google(cfg)
 
     def configure_google(self, cfg):
@@ -70,21 +74,38 @@ class RTranslator(threading.Thread):
             return
         self.agent_poe_map = bot_map
 
-    def poe_get_bot_id(self, lang):
-        bot_id = self.agent_poe_map.get(lang, None)
+    def configure_ollama(self, cfg):
+        agent_cfg = sim.get(cfg, None, "translator", "agent_ollama")
+        if agent_cfg is None:
+            return
+        if not sim.get(agent_cfg, True, "active"):
+            return
+        ollama_cfg = sim.get(cfg, None, "ollama")
+        self.agent_ollama_url = url = sim.get(ollama_cfg, None, "url")
+        if url is None or len(url) <= 0:
+            print("[translator] ollama url not found !")
+            return
+        bot_map = sim.get(ollama_cfg, None, "translate")
+        if bot_map is None:
+            print("[translator] ollama translate bot not found !")
+            return
+        self.agent_ollama_map = bot_map
+
+    def get_bot_id(self, map, lang):
+        bot_id = map.get(lang, None)
         if bot_id is not None:
             return bot_id
-        return self.agent_poe_map.get("all")
+        return map.get("all")
 
     def translate_poe(self, text, lang_src):
-        bot_id = self.poe_get_bot_id(lang_src)
+        bot_id = self.get_bot_id(self.agent_poe_map, lang_src)
 
         src_name = lang.LANGUAGES[lang_src]
         des_name = lang.LANGUAGES[self.lang_des]
 
-        question = f"from {src_name} to {des_name}: {text}"
+        prompt = f"from {src_name} to {des_name}: {text}"
         res = self.agent_poe.send_message(
-            bot_id, question
+            bot_id, prompt
         )
 
         if res is None:
@@ -94,6 +115,27 @@ class RTranslator(threading.Thread):
         for chunk in res:
             pass
         return chunk["text"]
+
+    def translate_ollama(self, text, lang_src):
+        bot_id = self.agent_ollama_map.get(self.agent_ollama_map, lang_src)
+
+        src_name = lang.LANGUAGES[lang_src]
+        des_name = lang.LANGUAGES[self.lang_des]
+
+        prompt = f"translate {src_name} to {des_name} and return only the translated text: {text}"
+
+        res = self.agent_ollama.send_message(
+            bot_id, prompt
+        )
+
+        if res is None:
+            raise Exception("[translator] ollama response is None")
+
+        chunk = None
+        for chunk in res:
+            pass
+        return chunk["text"]
+
 
     def translate_google(self, text, lang_src):
         return self.agent_google.translate(
