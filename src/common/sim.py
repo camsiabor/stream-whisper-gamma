@@ -6,4 +6,6 @@ def get(cfg, default=None, *keys):
         else:
             value = default
             break
+    if value is None:
+        value = default
     return value

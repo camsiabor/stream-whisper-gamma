@@ -14,7 +14,7 @@ class RManifest(threading.Thread):
         self.task_ctrl = task_ctrl
         self.do_run = True
 
-        self.logger = logging.getLogger('manifest')
+        self.logger = logging.getLogger(name='manifest')
 
     def run(self):
         self.logger.info("running")
@@ -31,9 +31,9 @@ class RManifest(threading.Thread):
 
                 # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
 
-                self.logger.info(f"[{task.text_info.duration}] ------------------------------------------------")
-                self.logger.info(f"[s] {task.text_transcribe}")
-                self.logger.info(f"[d] {text_target}")
+                print(f"[{task.text_info.duration}] ------------------------------------------------")
+                print(f"[s] {task.text_transcribe}")
+                print(f"[d] {text_target}")
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

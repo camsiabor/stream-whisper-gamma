@@ -1,5 +1,7 @@
+import codecs
 import logging
 import os
+import sys
 
 import pyaudiowpatch as pyaudio
 import yaml
@@ -32,10 +34,18 @@ def load_config():
     return cfg
 
 
-if __name__ == "__main__":
-
+def init_env():
     os.environ["PYTHONIOENCODING"] = "utf-8"
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    if sys.stdout.encoding != 'cp850':
+        sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
+    if sys.stderr.encoding != 'cp850':
+        sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
+
+
+if __name__ == "__main__":
+
+    init_env()
 
     init_logger()
     logger = logging.getLogger('main')
