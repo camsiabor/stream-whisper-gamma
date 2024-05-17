@@ -34,7 +34,7 @@ class RManifest(threading.Thread):
 
                 task.text_transcribe = task.text_transcribe.strip()
 
-                task.text_translate = sim.text_with_return(
+                text_target = sim.text_with_return(
                     text=task.text_translate.strip(),
                     splitter="" if task.param.lang_des == "zh" else " ",
                     max_len=10,
