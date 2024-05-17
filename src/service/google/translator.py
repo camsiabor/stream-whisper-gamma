@@ -10,7 +10,7 @@ from urllib.parse import quote
 import requests
 import urllib3
 
-from src.common.lang import LANGUAGES
+from src.common.langutil import LANGUAGES
 from src.service.google.constants import DEFAULT_SERVICE_URLS
 
 log = logging.getLogger(__name__)

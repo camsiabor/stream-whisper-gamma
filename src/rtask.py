@@ -1,6 +1,25 @@
 import queue
 
 
+class RBot:
+    def __init__(
+            self,
+            bot_id: any = "",
+            model: any = "",
+            chat_id: any = None,
+            lang: any = "",
+            prompt_type: str = "",
+            info=None,
+    ):
+        if info is None:
+            info = {}
+        self.id = bot_id
+        self.model = model
+        self.chat_id = chat_id
+        self.lang = lang
+        self.info = info
+
+
 class RParam:
     do_translate: bool
     lang_src: str

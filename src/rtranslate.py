@@ -8,7 +8,7 @@ import poe_api_wrapper
 
 import src.service.google.translator
 from src import rtask
-from src.common import sim, lang
+from src.common import sim
 
 
 class RTranslator(threading.Thread):
@@ -189,6 +189,12 @@ class RTranslator(threading.Thread):
         try:
             if self.agent_ollama is not None:
                 await self.translate_ollama("hello", "en")
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True, stack_info=True)
+
+        try:
+            if self.agent_poe is not None:
+                self.translate_poe("hello", "en")
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 
