@@ -75,6 +75,7 @@ class PoeCtrl:
         for lang_src, bot in target.items():
             try:
                 self.warmup_one(lang_src, bot)
+                self.logger.info(f"warmed up for lang: {lang_src} -> {bot.id}")
             except Exception as ex:
                 self.logger.error(f"failed to warmup for lang: {lang_src} | {ex}", exc_info=True, stack_info=True)
 

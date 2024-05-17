@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import ollama
@@ -44,14 +43,10 @@ class OllamaCtrl:
         self.agent = ollama.AsyncClient(host=self.host)
         return self
 
-    def warmup_one(self):
-        asyncio.run(self.translate(
-            text="hello",
-            lang_src="en",
-            lang_des="zh"
-        ))
+    async def warmup_one(self):
+        await self.translate(text="hello", lang_src="en", lang_des="zh")
 
-    def warmup(self, domain):
+    async def warmup(self, domain):
         if not self.active:
             return
         target = self.domains.get(domain, None)
@@ -59,7 +54,8 @@ class OllamaCtrl:
             raise Exception(f"ollama domain not found: {domain}")
         for key, bot in target.items():
             try:
-                self.warmup_one()
+                await self.warmup_one()
+                self.logger.info(f"warmed up: {key} -> {bot.id}")
             except Exception as ex:
                 self.logger.error(f"failed to warmup: {key} | {ex}", exc_info=True, stack_info=True)
 

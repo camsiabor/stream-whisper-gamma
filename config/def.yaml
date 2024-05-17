@@ -7,8 +7,8 @@ slicer:
   slicer_ratio: 0.5
 
 transcriber:
-  model_size: "Systran/faster-whisper-large-v3"
-  # model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
+  # model_size: "Systran/faster-whisper-large-v3"
+  model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   local_files_only: true
   device: "cuda"
   # lang_src: "ja"
@@ -44,7 +44,7 @@ poe:
 
 
 ollama:
-  active: false
+  active: true
   host: "http://127.0.0.1:11434"
   translate:
     all:

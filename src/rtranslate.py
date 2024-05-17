@@ -80,7 +80,7 @@ class RTranslator(threading.Thread):
     async def warmup(self):
         try:
             if self.agent_ollama.active:
-                self.agent_ollama.warmup("translate")
+                await self.agent_ollama.warmup("translate")
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 
