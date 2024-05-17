@@ -31,7 +31,12 @@ class RManifest(threading.Thread):
 
                 # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
 
+                task.text_transcribe = task.text_transcribe.strip()
+                task.text_translate = task.text_translate.strip()
+
                 print(f"[{task.text_info.duration}] ------------------------------------------------")
+                # print("[s] %s" % task.text_transcribe.encode('utf-8'))
+                # print("[d] %s" % text_target.encode('utf-8'))
                 print(f"[s] {task.text_transcribe}")
                 print(f"[d] {text_target}")
 

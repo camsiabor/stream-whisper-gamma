@@ -1,7 +1,6 @@
-import codecs
+
 import logging
 import os
-import sys
 
 import pyaudiowpatch as pyaudio
 import yaml
@@ -35,12 +34,21 @@ def load_config():
 
 
 def init_env():
-    os.environ["PYTHONIOENCODING"] = "utf-8"
+    # os.environ["PYTHONIOENCODING"] = "utf-8"
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+    """
+    import sys
+    import codecs
     if sys.stdout.encoding != 'cp850':
         sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
     if sys.stderr.encoding != 'cp850':
         sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
+
+    import subprocess
+    # Run the 'chcp 65001' command as a subprocess
+    subprocess.run('chcp 65001', shell=True)
+    """
 
 
 if __name__ == "__main__":
