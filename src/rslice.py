@@ -60,7 +60,7 @@ class RSlice(threading.Thread):
                 task: rtask.RTask = self.task_ctrl.queue_slice.get()
                 if task is None:
                     break
-
+                task.info.time_set("slice")
                 try:
                     is_speech = self.vad.is_speech(task.audio, task.param.sample_rate)
                 except Exception as ex:

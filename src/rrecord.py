@@ -157,6 +157,9 @@ class Recorder(threading.Thread):
         sample_channels = self.get_sample_channels()
 
         while self.do_run:
+
+            info = rtask.RInfo()
+
             frame = self.stream.read(frame_size, exception_on_overflow=False)
 
             if not frame:
@@ -167,6 +170,7 @@ class Recorder(threading.Thread):
                 sample_rate=sample_rate,
                 sample_width=sample_width,
                 sample_channels=sample_channels,
+                info=info,
             )
             self.task_ctrl.queue_slice.put(task)
 

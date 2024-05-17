@@ -1,4 +1,5 @@
 import queue
+import time
 
 
 class RBot:
@@ -33,6 +34,27 @@ class RParam:
     sample_channels: int
 
 
+class RInfo:
+    times = {}
+
+    def __init__(self):
+        self.time_set("create")
+
+    def time_set(self, name: str):
+        self.times[name] = time.time_ns() // 1_000_000
+
+    def time_get(self, name: str, raise_if_none=False):
+        ret = self.times[name]
+        if ret is None:
+            if raise_if_none:
+                raise Exception(f"Time {name} is None")
+            return 0
+        return ret
+
+    def time_diff(self, head: str, tail: str, raise_if_none=False):
+        return self.time_get(tail, raise_if_none) - self.time_get(head, raise_if_none)
+
+
 class RCommand:
 
     def __init__(
@@ -46,7 +68,6 @@ class RCommand:
         self.extra = extra
 
 
-
 class RTask:
 
     def __init__(
@@ -55,7 +76,8 @@ class RTask:
             sample_rate: int,
             sample_width: int,
             sample_channels: int,
-            param=RParam()
+            param=RParam(),
+            info=None,
     ):
         self.audio = audio
         self.text_transcribe = ""
@@ -70,9 +92,12 @@ class RTask:
         self.param.sample_width = sample_width
         self.param.sample_channels = sample_channels
 
+        self.info = info
+        if self.info is None:
+            self.info = RInfo()
+
 
 class RTaskControl:
-
     queue_command = queue.Queue()
     queue_slice = queue.Queue()
     queue_transcribe = queue.Queue()

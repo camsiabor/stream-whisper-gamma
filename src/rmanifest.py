@@ -29,12 +29,17 @@ class RManifest(threading.Thread):
                 if text_target is None or len(text_target) <= 0:
                     continue
 
+                task.info.time_set("manifest")
+
+                time_diff = task.info.time_diff(head="create", tail="manifest")
+
                 # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
 
                 task.text_transcribe = task.text_transcribe.strip()
                 task.text_translate = task.text_translate.strip()
 
-                print(f"[{task.text_info.duration}] ------------------------------------------------")
+                print(f"duration: {task.text_info.duration} | consume: {time_diff}"
+                      "----------------------------------- ")
                 # print("[s] %s" % task.text_transcribe.encode('utf-8'))
                 # print("[d] %s" % text_target.encode('utf-8'))
                 print(f"[s] {task.text_transcribe}")

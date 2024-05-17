@@ -114,6 +114,7 @@ class RTranslator(threading.Thread):
                 task: rtask.RTask = self.task_ctrl.queue_translate.get()
                 if task.text_transcribe is None or len(task.text_transcribe) <= 0:
                     continue
+                task.info.time_set("translate")
 
                 result = await self.translate(
                     task.text_transcribe,
