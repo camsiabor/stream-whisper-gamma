@@ -1,3 +1,5 @@
+import time
+
 import ollama
 import poe_api_wrapper
 import yaml
@@ -65,8 +67,17 @@ async def test_ollama():
     print(result['message'].get('content', ''))
 
 
+def test_time():
+    create = time.time_ns() / 1_000_000
+    time.sleep(2)
+    finish = time.time_ns() / 1_000_000
+    print(finish - create)
+
+
 if __name__ == '__main__':
     # asyncio.run(test_ollama())
 
-    test_poe()
+    # test_poe()
+
+    test_time()
     pass

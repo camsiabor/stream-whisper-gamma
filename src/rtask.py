@@ -1,3 +1,4 @@
+import datetime
 import queue
 import time
 
@@ -39,9 +40,13 @@ class RInfo:
 
     def __init__(self):
         self.time_set("create")
+        self.time_set_as_str("create_str")
 
     def time_set(self, name: str):
-        self.times[name] = time.time_ns() // 1_000_000
+        self.times[name] = time.time_ns() / 1_000_000
+
+    def time_set_as_str(self, name: str):
+        self.times[name] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
     def time_get(self, name: str, raise_if_none=False):
         ret = self.times[name]

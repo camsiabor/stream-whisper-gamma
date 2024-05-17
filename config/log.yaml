@@ -6,15 +6,16 @@ formatters:
 handlers:
   file_handler:
     class: logging.handlers.RotatingFileHandler
-    level: DEBUG
+    level: INFO
     formatter: simple
     filename: ../log/main.log
     maxBytes: 1000000
     backupCount: 10
   console_handler:
     class: logging.StreamHandler
-    level: DEBUG
+    level: INFO
     formatter: simple
 root:
-  level: DEBUG
-  handlers: [ file_handler, console_handler ]
+  level: INFO
+  # handlers: [ file_handler, console_handler ]
+  handlers: [ console_handler ]
