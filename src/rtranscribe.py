@@ -4,53 +4,58 @@ import threading
 import traceback
 import typing
 
+import codefast
 from faster_whisper import WhisperModel
 
 from src import rtask
+from src.common import sim
 
 
 class RTranscriber(threading.Thread):
+    lang_src: str
+    beam_size: int
+    model_size: str
+    download_root: str
+    local_files_only: bool
+    device: str
+    compute_type: str
+    prompt: str
+
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
-            model_size: str = "large-v3",
-            device: str = "cuda",
-            compute_type: str = "default",
-            download_root: str = "../models",
-            local_files_only: bool = True,
-            prompt: str = 'transcriber here'
     ) -> None:
-        """ FasterWhisper 语音转写
-        Args:
-            model_size (str): 模型大小，可选项为 "tiny", "base", "small", "medium", "large" 。
-                更多信息参考：https://github.com/openai/whisper
-            device (str, optional): 模型运行设备。
-            compute_type (str, optional): 计算类型。默认为"default"。
-            prompt (str, optional): 初始提示。如果需要转写简体中文，可以使用简体中文提示。
-        """
         super().__init__()
         self.task_ctrl = task_ctrl
-
-        self.model_size = model_size
-        self.download_root = download_root
-        self.local_files_only = local_files_only
-
-        self.device = device
-        self.compute_type = compute_type
-
-        self.prompt = prompt
-
         self.do_run = True
-
         self._model = None
-
         self.logger = logging.getLogger('transcriber')
+        self.configure()
+
+    """ FasterWhisper 语音转写
+            Args:
+                model_size (str): 模型大小，可选项为 "tiny", "base", "small", "medium", "large" 。
+                    更多信息参考：https://github.com/openai/whisper
+                device (str, optional): 模型运行设备。
+                compute_type (str, optional): 计算类型。默认为"default"。
+                prompt (str, optional): 初始提示。如果需要转写简体中文，可以使用简体中文提示。
+            """
+
+    def configure(self) -> 'RTranscriber':
+        cfg = sim.get(self.task_ctrl.cfg, {}, "transcriber")
+        self.lang_src = sim.get(cfg, None, "lang_src")
+        self.beam_size = sim.get(cfg, 5, "beam_size")
+        self.model_size = sim.get(cfg, "large-v3", "model_size")
+        self.download_root = sim.get(cfg, "../models", "download_root")
+        self.local_files_only = sim.get(cfg, True, "local_files_only")
+        self.device = sim.get(cfg, "cuda", "device")
+        self.compute_type = sim.get(cfg, "default", "compute_type")
+        self.prompt = sim.get(cfg, "transcriber here", "prompt")
+        return self
 
     def init(self, force: bool = False) -> 'RTranscriber':
-
         if self._model is not None and force is False:
             return self
-
         # local_file_only = True if len(self.download_root) > 0 else False
         self._model = WhisperModel(
             model_size_or_path=self.model_size,
@@ -70,9 +75,14 @@ class RTranscriber(threading.Thread):
     def __call__(self, task: rtask.RTask) -> typing.Generator[str, None, None]:
 
         segments, info = self._model.transcribe(
-            io.BytesIO(task.audio),
-
+            audio=io.BytesIO(task.audio),
+            # the pathes explored by the beam search
+            beam_size=self.beam_size,
+            # language
+            language=self.lang_src,
+            #
             initial_prompt=self.prompt,
+            #
             vad_filter=True
         )
 
@@ -97,9 +107,9 @@ class RTranscriber(threading.Thread):
                 task = self.task_ctrl.queue_transcribe.get()
                 if not task.audio or task.audio is None:
                     continue
-                text = ''
+                text = codefast.fp.cyan('')
                 for seg in self(task):
-                    text += seg
+                    text += codefast.fp.cyan(seg)
                 if len(text) <= 0:
                     continue
 

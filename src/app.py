@@ -16,7 +16,10 @@ def init_logger():
         if not os.path.exists(log_path):
             log_dir_path = os.path.dirname(log_path)
             os.makedirs(log_dir_path, exist_ok=True)
+        # noinspection PyUnresolvedReferences
         logging.config.dictConfig(config)
+
+    logging.getLogger("faster_whisper").setLevel(logging.ERROR)
 
 
 def load_config():
@@ -31,12 +34,12 @@ def load_config():
 
 if __name__ == "__main__":
 
+    os.environ["PYTHONIOENCODING"] = "utf-8"
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
     init_logger()
     logger = logging.getLogger('main')
     try:
-
         cfg = load_config()
         p = pyaudio.PyAudio()
         rlistener = rlistener.RListener(

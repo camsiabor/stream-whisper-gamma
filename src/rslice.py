@@ -68,7 +68,6 @@ class RSlice(threading.Thread):
                     self.logger.error(f"[recorder] vad.is_speech() failed: {ex}")
                     self.logger.error(ex, exc_info=True, stack_info=True)
 
-
                 watcher.append(is_speech)
                 self.__frames.append(task.audio)
                 if not triggered:

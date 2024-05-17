@@ -43,12 +43,9 @@ class RListener(threading.Thread):
         )
 
     def configure_transcriber(self):
+
         self.transcriber = rtranscribe.RTranscriber(
             task_ctrl=self.task_ctrl,
-            model_size=self.cfg['transcriber'].get('model_size', 'large-v3'),
-            local_files_only=self.cfg['transcriber'].get('local_files_only', False),
-            device=self.cfg['transcriber'].get('device', 'auto'),
-            prompt=self.cfg['transcriber'].get('prompt', 'hello world'),
         ).init(force=True)
 
     def configure_translator(self):
