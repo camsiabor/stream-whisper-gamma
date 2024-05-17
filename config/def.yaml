@@ -1,5 +1,5 @@
 recorder:
-  chunk_size: 4096
+  chunk_size: 512
   frame_duration: 10
 
 slicer:
@@ -11,13 +11,13 @@ transcriber:
   model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   local_files_only: true
   device: "cuda"
-  # lang_src: "ja"
-  beam_size: 5
+  lang_src: "ja"
+  beam_size: 25
   prompt: "こんにちは"
 
 
 translator:
-  lang_des: "zh"
+  lang_des: "en"
   agent_google:
     active: true
     domain: "hk"
@@ -35,8 +35,8 @@ renderer:
 poe:
   active: true
   token:
-    b: "*"
-    lat: "*"
+    b: ""
+    lat: ""
   translate:
     all:
       id: "trans_BotIRT5PFUVID"
@@ -48,9 +48,7 @@ ollama:
   host: "http://127.0.0.1:11434"
   translate:
     all:
-      id: "sakura-13b"
-      prompt_type: "none"
+      id: "L3-lexi-8b-q6"
+      prompt_type: ""
 
-    # all: "sakura-13b"
-    # all: "lq-14b"
-    # ja: "sakura-13b"
+
