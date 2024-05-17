@@ -1,10 +1,9 @@
-import asyncio
-
 import ollama
 import poe_api_wrapper
 import yaml
 
 import src.service.google.translator as googletrans
+from src.common import sim
 
 
 def test_google():
@@ -21,18 +20,33 @@ def test_poe():
     with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
 
-    bot_id = cfg["poe"]["bot_translate"]["id"]
+    token = sim.get(cfg, {}, "poe", "token")
+    bot_id = sim.get(cfg, "", "poe", "translate", "all").lower()
 
-    poe = poe_api_wrapper.PoeApi(cookie=cfg["poe"])
+    poe = poe_api_wrapper.PoeApi(cookie=token)
 
     # ret = poe.get_chat_history(count=3, bot=bot_id)
 
+    response = poe.get_chat_history(
+        bot=bot_id,
+        count=1,
+    )
+
+    chats = response["data"][bot_id]
+
+    """
+    [{'chatCode': '2ayefr830yxpi1bm7ej', 'chatId': 483212303, 'id': 'Q2hhdDo0ODMyMTIzMDM=', 'title': 'translator'}]
+    """
+
+    print(chats)
+
+    """
     res = poe.send_message(bot_id, "translate 'power overwhelming' into chinese")
     chunk = None
     for chunk in res:
-        pass
-
-    print(chunk["text"])
+        pass    
+    print(chunk["text"])    
+    """
 
 
 async def test_ollama():
@@ -52,6 +66,7 @@ async def test_ollama():
 
 
 if __name__ == '__main__':
-    asyncio.run(test_ollama())
-    # test_ollama()
+    # asyncio.run(test_ollama())
+
+    test_poe()
     pass

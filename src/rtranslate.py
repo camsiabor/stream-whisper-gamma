@@ -133,7 +133,7 @@ class RTranslator(threading.Thread):
         if 'sakura' in model:
             content = text
         else:
-            content = f"translate {src_name} to {des_name} and return only the translated text: {text}"
+            content = f"translate following {src_name} to {des_name} and return only the translated text: {text}"
 
         message = {
             'role': 'user',
@@ -183,8 +183,14 @@ class RTranslator(threading.Thread):
         return ret
 
     async def warmup(self):
-        if self.agent_ollama is not None:
-            await self.translate_ollama("hello", "en")
+        try:
+            if self.agent_ollama is not None:
+                await self.translate_ollama("hello", "en")
+        except Exception:
+            print("[translator]")
+            traceback.print_exc()
+
+
 
     async def cycle(self):
         print("[translator] running")
