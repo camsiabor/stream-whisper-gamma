@@ -2,6 +2,7 @@ import logging
 import threading
 
 from src import rtask
+from src.common import sim
 
 
 class RManifest(threading.Thread):
@@ -32,7 +33,12 @@ class RManifest(threading.Thread):
                 # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
 
                 task.text_transcribe = task.text_transcribe.strip()
-                task.text_translate = task.text_translate.strip()
+
+                task.text_translate = sim.text_with_return(
+                    text=task.text_translate.strip(),
+                    splitter="" if task.param.lang_des == "zh" else " ",
+                    max_len=10,
+                )
 
                 # print("[s] %s" % task.text_transcribe.encode('utf-8'))
                 # print("[d] %s" % text_target.encode('utf-8'))

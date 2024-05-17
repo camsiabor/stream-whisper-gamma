@@ -115,6 +115,7 @@ class RTranslator(threading.Thread):
                 if task.text_transcribe is None or len(task.text_transcribe) <= 0:
                     continue
                 task.info.time_set("translate")
+                task.param.lang_des = self.lang_des
 
                 result = await self.translate(
                     task.text_transcribe,
