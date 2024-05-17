@@ -3,12 +3,10 @@ import logging
 import threading
 import traceback
 
-import ollama
-import poe_api_wrapper
-
 import src.service.google.translator
 from src import rtask
 from src.common import sim
+from src.service import poe_ctrl, ollama_ctrl
 
 
 class RTranslator(threading.Thread):
@@ -21,9 +19,6 @@ class RTranslator(threading.Thread):
         super().__init__()
 
         cfg = task_ctrl.cfg
-        cfg_trans = cfg["translator"]
-        if cfg is None:
-            cfg_trans = []
 
         self.task_ctrl = task_ctrl
         self.do_run = True
@@ -31,12 +26,8 @@ class RTranslator(threading.Thread):
 
         self.agent_google = None
 
-        self.agent_poe = None
-        self.agent_poe_map = {}
-
-        self.agent_ollama = None
-        self.agent_ollama_host = None
-        self.agent_ollama_map = {}
+        self.agent_poe = poe_ctrl.PoeCtrl(cfg)
+        self.agent_ollama = ollama_ctrl.OllamaCtrl(cfg)
 
         self.configure_poe(cfg)
         self.configure_ollama(cfg)
@@ -58,104 +49,16 @@ class RTranslator(threading.Thread):
         )
 
     def configure_poe(self, cfg):
-        agent_cfg = sim.get(cfg, None, "translator", "agent_poe")
-        if agent_cfg is None:
+        active = sim.get(cfg, False, "translator", "agent_poe", "active")
+        if not active:
             return
-        if not sim.get(agent_cfg, True, "active"):
-            return
-
-        poe_cfg = sim.get(cfg, None, "poe")
-        token = sim.get(poe_cfg, None, "token")
-        if token is None:
-            self.logger.error("poe token not found !", exc_info=True, stack_info=True)
-            return
-
-        self.agent_poe = poe_api_wrapper.PoeApi(
-            cookie=token
-        )
-
-        bot_map = sim.get(poe_cfg, None, "translate")
-        if bot_map is None:
-            self.logger.error("poe translate bot not found !", exc_info=True, stack_info=True)
-            return
-        self.agent_poe_map = bot_map
+        self.agent_poe.configure("translate")
 
     def configure_ollama(self, cfg):
-        agent_cfg = sim.get(cfg, None, "translator", "agent_ollama")
-        if agent_cfg is None:
+        active = sim.get(cfg, False, "translator", "agent_ollama", "active")
+        if not active:
             return
-        if not sim.get(agent_cfg, True, "active"):
-            return
-        ollama_cfg = sim.get(cfg, None, "ollama")
-        self.agent_ollama_host = url = sim.get(ollama_cfg, None, "host")
-        if url is None or len(url) <= 0:
-            self.logger.error("[translator] ollama host not found !", exc_info=True, stack_info=True)
-            return
-        bot_map = sim.get(ollama_cfg, None, "translate")
-        if bot_map is None:
-            self.logger.error("[translator] ollama translate bot not found !", exc_info=True, stack_info=True)
-            return
-        self.agent_ollama_map = bot_map
-        self.agent_ollama = ollama.AsyncClient(host=self.agent_ollama_host)
-
-    def get_bot_id(self, map, lang):
-        bot_id = map.get(lang, None)
-        if bot_id is not None:
-            return bot_id
-        return map.get("all")
-
-    def translate_poe(self, text, lang_src):
-        bot_id = self.get_bot_id(self.agent_poe_map, lang_src)
-
-        src_name = lang.LANGUAGES[lang_src]
-        des_name = lang.LANGUAGES[self.lang_des]
-
-        prompt = f"from {src_name} to {des_name}: {text}"
-        res = self.agent_poe.send_message(
-            bot_id, prompt
-        )
-
-        if res is None:
-            raise Exception("[translator] poe response is None")
-
-        chunk = None
-        for chunk in res:
-            pass
-        return chunk["text"]
-
-    async def translate_ollama(
-            self,
-            text,
-            lang_src
-    ):
-        model = self.get_bot_id(self.agent_ollama_map, lang_src)
-
-        src_name = lang.LANGUAGES[lang_src]
-        des_name = lang.LANGUAGES[self.lang_des]
-
-        if 'sakura' in model:
-            content = text
-        else:
-            content = f"translate following {src_name} to {des_name} and return only the translated text: {text}"
-
-        message = {
-            'role': 'user',
-            'content': content,
-        }
-        result = await self.agent_ollama.chat(
-            model=model,
-            messages=[message],
-        )
-        """
-        async for part in await self.agent_ollama.chat(
-                model=model,
-                messages=[message],
-                stream=True
-        ):
-            result += part['message'].get('content', '')
-        """
-
-        return sim.get(result, '', 'message', 'content')
+        self.agent_ollama.configure("translate")
 
     def translate_google(self, text, lang_src):
         return self.agent_google.translate(
@@ -168,15 +71,15 @@ class RTranslator(threading.Thread):
 
         ret = ""
 
-        if len(ret) <= 0 and self.agent_ollama is not None:
+        if len(ret) <= 0 and self.agent_ollama.active:
             try:
-                ret = await self.translate_ollama(text, lang_src)
+                ret = await self.agent_ollama.translate(text, lang_src, self.lang_des)
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
 
-        if len(ret) <= 0 and self.agent_poe is not None:
+        if len(ret) <= 0 and self.agent_poe.active:
             try:
-                ret = self.translate_poe(text, lang_src)
+                ret = self.agent_poe.translate(text, lang_src, self.lang_des)
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
 
@@ -187,14 +90,14 @@ class RTranslator(threading.Thread):
 
     async def warmup(self):
         try:
-            if self.agent_ollama is not None:
-                await self.translate_ollama("hello", "en")
+            if self.agent_ollama.active:
+                self.agent_ollama.warmup("translate")
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 
         try:
-            if self.agent_poe is not None:
-                self.translate_poe("hello", "en")
+            if self.agent_poe.active:
+                self.agent_poe.warmup("translate")
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 

@@ -1,43 +1,36 @@
+import asyncio
 import logging
 
-import poe_api_wrapper
+import ollama
 
 from src import rtask
 from src.common import sim, langutil
 
 
 class OllamaCtrl:
-    translate_map = {}
+    domains = {}
 
     def __init__(self, cfg):
         self.cfg = cfg
+        self.host = ""
         self.agent = None
         self.active = False
+
         self.logger = logging.getLogger('ollama')
 
-    def configure(self) -> 'OllamaCtrl':
-        poe_cfg = sim.get(self.cfg, None, "ollama")
-
-        self.active = sim.get(poe_cfg, False, "active")
+    def configure(self, domain) -> 'OllamaCtrl':
+        ollama_cfg = sim.get(self.cfg, None, "ollama")
+        self.active = sim.get(ollama_cfg, False, "active")
         if not self.active:
             return self
 
-        trans_map = sim.get(poe_cfg, None, "translate")
-        if trans_map is None:
-            raise Exception("poe translate map not found !")
-        self.translate_map.clear()
-
-        for lang_src, bot_info in trans_map.items():
-            self.translate_map[lang_src] = rtask.RBot(
-                lang=lang_src,
-                bot_id=bot_info.get("id", ""),
-                model=bot_info.get("model", ""),
-                prompt_type=bot_info.get("prompt_type", ""),
-            )
-
-        self.agent = poe_api_wrapper.PoeApi(
-            cookie=token
-        )
+        self.host = url = sim.get(ollama_cfg, None, "host")
+        if url is None or len(url) <= 0:
+            raise Exception("ollama host not found !")
+        mapping = sim.get(ollama_cfg, None, domain)
+        if mapping is None:
+            raise Exception(f"ollama {domain} mapping not found !")
+        self.agent = ollama.AsyncClient(host=self.host)
         return self
 
     def get_chat_id(self, bot: rtask.RBot, create=True):
@@ -52,49 +45,60 @@ class OllamaCtrl:
             _, chat_id = self.translate(bot.id, "hello", bot.lang)
         return data[0]["chatId"]
 
-    def warmup_one(self, lang_src, bot):
-        chat_id = self.get_chat_id(bot=bot, create=True)
-        if chat_id is None or len(chat_id) <= 0:
-            self.logger.error(f"chat not found for lang: {lang_src}")
-        bot.chat_id = chat_id
-        self.logger.info(f"for {lang_src} -> {bot.id} | chat_id : {bot.chat_id}")
+    def warmup_one(self):
+        asyncio.run(self.translate(
+            text="hello",
+            lang_src="en",
+            lang_des="zh"
+        ))
 
-    def warmup(self):
+    def warmup(self, domain):
         if not self.active:
             return
-        for lang_src, bot in self.translate_map.items():
+        target = self.domains.get(domain, None)
+        if target is None:
+            raise Exception(f"ollama domain not found: {domain}")
+        for key, bot in target.items():
             try:
-                self.warmup_one(lang_src, bot)
+                self.warmup_one()
             except Exception as ex:
-                self.logger.error(f"failed to warmup for lang: {lang_src} | {ex}", exc_info=True, stack_info=True)
+                self.logger.error(f"failed to warmup: {key} | {ex}", exc_info=True, stack_info=True)
 
-    def get_bot(self, mapping, lang_src):
+    def get_bot(self, domain, lang_src):
+        mapping = self.domains.get(domain, None)
+        if mapping is None:
+            raise Exception(f"ollama domain not found: {domain}")
         bot = mapping.get(lang_src, None)
         if bot is not None:
             return bot
         return mapping.get("all")
 
-    def translate(self, text, lang_src, lang_des):
-        bot = self.get_bot(self.translate_map, lang_src)
-        if bot is None:
-            raise Exception(f"bot not found for lang: {lang_src}")
+    async def translate(self, text, lang_src, lang_des):
+
+        bot = self.get_bot("translate", lang_src)
 
         src_name = langutil.LANGUAGES[lang_src]
         des_name = langutil.LANGUAGES[lang_des]
 
-        prompt = f"translate following {src_name} to {des_name}, return ONLY the translated text: {text}"
-        res = self.agent.send_message(
-            bot=bot.id,
-            chatId=bot.chat_id,
-            message=prompt,
+        if bot.prompt_type == "none":
+            prompt = text
+        else:
+            prompt = f"translate following {src_name} to {des_name} and return ONLY the translated text: {text}"
+
+        message = {
+            'role': 'user',
+            'content': prompt,
+        }
+        result = await self.agent.chat(
+            model=bot.id,
+            messages=[message],
         )
-
-        if res is None:
-            raise Exception("poe response is None")
-
-        chunk = None
-        for chunk in res:
-            pass
-        text_ret = chunk["text"]
-        chat_id = chunk["chatId"]
-        return text_ret, chat_id
+        """
+        async for part in await self.agent_ollama.chat(
+                model=model,
+                messages=[message],
+                stream=True
+        ):
+            result += part['message'].get('content', '')
+        """
+        return sim.get(result, '', 'message', 'content')

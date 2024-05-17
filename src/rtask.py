@@ -7,6 +7,7 @@ class RBot:
             bot_id: any = "",
             model: any = "",
             chat_id: any = None,
+            key: str = "",
             lang: any = "",
             prompt_type: str = "",
             info=None,
@@ -17,6 +18,7 @@ class RBot:
         self.model = model
         self.chat_id = chat_id
         self.lang = lang
+        self.key = key
         self.info = info
 
 

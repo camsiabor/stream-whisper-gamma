@@ -7,7 +7,7 @@ from src.common import sim, langutil
 
 
 class PoeCtrl:
-    translate_map = {}
+    domains = {}
 
     def __init__(self, cfg):
         self.cfg = cfg
@@ -15,7 +15,7 @@ class PoeCtrl:
         self.active = False
         self.logger = logging.getLogger('poe')
 
-    def configure(self) -> 'PoeCtrl':
+    def configure(self, domain) -> 'PoeCtrl':
         poe_cfg = sim.get(self.cfg, None, "poe")
 
         self.active = sim.get(poe_cfg, False, "active")
@@ -26,13 +26,15 @@ class PoeCtrl:
         if token is None:
             raise Exception("poe token not found !")
 
-        trans_map = sim.get(poe_cfg, None, "translate")
-        if trans_map is None:
-            raise Exception("poe translate map not found !")
-        self.translate_map.clear()
+        mapping = sim.get(poe_cfg, None, domain)
+        if mapping is None:
+            raise Exception(f"poe {domain} mapping not found !")
 
-        for lang_src, bot_info in trans_map.items():
-            self.translate_map[lang_src] = rtask.RBot(
+        target = self.domains[domain] = {}
+
+        for lang_src, bot_info in mapping.items():
+            target[lang_src] = rtask.RBot(
+                key=lang_src,
                 lang=lang_src,
                 bot_id=bot_info.get("id", ""),
                 prompt_type=bot_info.get("prompt_type", ""),
@@ -41,6 +43,7 @@ class PoeCtrl:
         self.agent = poe_api_wrapper.PoeApi(
             cookie=token
         )
+
         return self
 
     def get_chat_id(self, bot: rtask.RBot, create=True):
@@ -62,30 +65,41 @@ class PoeCtrl:
         bot.chat_id = chat_id
         self.logger.info(f"for {lang_src} -> {bot.id} | chat_id : {bot.chat_id}")
 
-    def warmup(self):
+    def warmup(self, domain: str):
         if not self.active:
             return
-        for lang_src, bot in self.translate_map.items():
+        target = self.domains.get(domain, None)
+        if target is None:
+            raise Exception(f"domain mapping not found: {domain}")
+        # noinspection PyUnresolvedReferences
+        for lang_src, bot in target.items():
             try:
                 self.warmup_one(lang_src, bot)
             except Exception as ex:
                 self.logger.error(f"failed to warmup for lang: {lang_src} | {ex}", exc_info=True, stack_info=True)
 
-    def get_bot(self, mapping, lang_src):
+    def get_bot(self, domain, lang_src):
+        mapping = self.domains.get(domain, None)
+        if mapping is None:
+            raise Exception(f"domain not found: {domain}")
         bot = mapping.get(lang_src, None)
         if bot is not None:
             return bot
         return mapping.get("all")
 
     def translate(self, text, lang_src, lang_des):
-        bot = self.get_bot(self.translate_map, lang_src)
+        bot = self.get_bot("translate", lang_src)
         if bot is None:
             raise Exception(f"bot not found for lang: {lang_src}")
 
         src_name = langutil.LANGUAGES[lang_src]
         des_name = langutil.LANGUAGES[lang_des]
 
-        prompt = f"translate following {src_name} to {des_name}, return ONLY the translated text: {text}"
+        if bot.prompt_type == "none":
+            prompt = text
+        else:
+            prompt = f"translate following {src_name} to {des_name}, return ONLY the translated text: {text}"
+
         res = self.agent.send_message(
             bot=bot.id,
             chatId=bot.chat_id,
