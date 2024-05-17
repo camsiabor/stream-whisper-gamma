@@ -7,11 +7,12 @@ slicer:
   slicer_ratio: 0.5
 
 transcriber:
-  # model_size: Systran/faster-whisper-large-v3
-  model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
+  model_size: "Systran/faster-whisper-large-v3"
+  # model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   local_files_only: true
   device: "cuda"
-  # prompt: "hello"
+  # lang_src: "ja"
+  beam_size: 5
   prompt: "こんにちは"
 
 
@@ -32,15 +33,24 @@ renderer:
 
 
 poe:
+  active: true
   token:
-    b: "b"
-    lat: "lat"
+    b: "*"
+    lat: "*"
   translate:
-    all: "*"
+    all:
+      id: "trans_BotIRT5PFUVID"
+      prompt_type: ""
 
 
 ollama:
-  url: "http://127.0.0.1:11434/api/generate"
+  active: false
+  host: "http://127.0.0.1:11434"
   translate:
-    all: "*"
-    ja: "*"
+    all:
+      id: "sakura-13b"
+      prompt_type: "none"
+
+    # all: "sakura-13b"
+    # all: "lq-14b"
+    # ja: "sakura-13b"

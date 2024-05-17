@@ -20,6 +20,7 @@ class RBot:
         self.lang = lang
         self.key = key
         self.info = info
+        self.prompt_type = prompt_type
 
 
 class RParam:

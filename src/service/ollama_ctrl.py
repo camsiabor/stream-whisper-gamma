@@ -30,20 +30,19 @@ class OllamaCtrl:
         mapping = sim.get(ollama_cfg, None, domain)
         if mapping is None:
             raise Exception(f"ollama {domain} mapping not found !")
+
+        target = self.domains[domain] = {}
+        for lang_src, bot_info in mapping.items():
+            target[lang_src] = rtask.RBot(
+                key=lang_src,
+                lang=lang_src,
+                model=bot_info.get("model", "").lower(),
+                bot_id=bot_info.get("id", "").lower(),
+                prompt_type=bot_info.get("prompt_type", "").lower(),
+            )
+
         self.agent = ollama.AsyncClient(host=self.host)
         return self
-
-    def get_chat_id(self, bot: rtask.RBot, create=True):
-        response = self.agent.get_chat_history(
-            bot=bot.id,
-            count=1,
-        )
-        data = sim.get(response, None, "data", bot.id)
-        if data is None or len(data) <= 0:
-            if not create:
-                return None
-            _, chat_id = self.translate(bot.id, "hello", bot.lang)
-        return data[0]["chatId"]
 
     def warmup_one(self):
         asyncio.run(self.translate(

@@ -90,6 +90,16 @@ class RTranslator(threading.Thread):
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 
+    @staticmethod
+    def result_handle(result):
+        if result is None:
+            return None
+        if isinstance(result, tuple) and len(result) > 0:
+            result = result[0]
+        if isinstance(result, str) and len(result) > 0:
+            result = result.strip()
+        return result
+
     async def cycle(self):
         self.logger.info("running")
         error_count = 0
@@ -105,12 +115,17 @@ class RTranslator(threading.Thread):
                 if task.text_transcribe is None or len(task.text_transcribe) <= 0:
                     continue
 
-                task.text_translate = await self.translate(
+                result = await self.translate(
                     task.text_transcribe,
                     task.text_info.language,
                     task,
                 )
 
+                result = self.result_handle(result)
+                if result is None:
+                    continue
+
+                task.text_translate = result
                 self.task_ctrl.queue_manifest.put(task)
             except Exception:
                 traceback.print_exc()

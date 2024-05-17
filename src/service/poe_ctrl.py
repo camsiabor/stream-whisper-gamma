@@ -35,8 +35,8 @@ class PoeCtrl:
             target[lang_src] = rtask.RBot(
                 key=lang_src,
                 lang=lang_src,
-                bot_id=bot_info.get("id", ""),
-                prompt_type=bot_info.get("prompt_type", ""),
+                bot_id=bot_info.get("id", "").lower(),
+                prompt_type=bot_info.get("prompt_type", "").lower(),
             )
 
         self.agent = poe_api_wrapper.PoeApi(
@@ -54,13 +54,14 @@ class PoeCtrl:
         if data is None or len(data) <= 0:
             if not create:
                 return None
-            _, chat_id = self.translate(bot.id, "hello", bot.lang)
+            _, chat_id = self.translate("hello", "en", "zh")
         return data[0]["chatId"]
 
     def warmup_one(self, lang_src, bot):
         chat_id = self.get_chat_id(bot=bot, create=True)
-        if chat_id is None or len(chat_id) <= 0:
+        if chat_id is None:
             self.logger.error(f"chat not found for lang: {lang_src}")
+            return
         bot.chat_id = chat_id
         self.logger.info(f"for {lang_src} -> {bot.id} | chat_id : {bot.chat_id}")
 
@@ -99,11 +100,14 @@ class PoeCtrl:
         else:
             prompt = f"translate following {src_name} to {des_name}, return ONLY the translated text: {text}"
 
-        res = self.agent.send_message(
-            bot=bot.id,
-            chatId=bot.chat_id,
-            message=prompt,
-        )
+        if bot.chat_id is None:
+            res = self.agent.send_message(bot=bot.id, message=prompt, )
+        else:
+            res = self.agent.send_message(
+                bot=bot.id,
+                chatId=bot.chat_id,
+                message=prompt,
+            )
 
         if res is None:
             raise Exception("poe response is None")
@@ -112,5 +116,5 @@ class PoeCtrl:
         for chunk in res:
             pass
         text_ret = chunk["text"]
-        chat_id = chunk["chatId"]
-        return text_ret, chat_id
+        bot.chat_id = chunk["chatId"]
+        return text_ret, bot.chat_id

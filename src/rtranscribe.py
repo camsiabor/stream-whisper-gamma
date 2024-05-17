@@ -4,7 +4,6 @@ import threading
 import traceback
 import typing
 
-import codefast
 from faster_whisper import WhisperModel
 
 from src import rtask
@@ -79,7 +78,7 @@ class RTranscriber(threading.Thread):
             # the pathes explored by the beam search
             beam_size=self.beam_size,
             # language
-            language=self.lang_src,
+            # language=self.lang_src,
             #
             initial_prompt=self.prompt,
             #
@@ -107,9 +106,11 @@ class RTranscriber(threading.Thread):
                 task = self.task_ctrl.queue_transcribe.get()
                 if not task.audio or task.audio is None:
                     continue
-                text = codefast.fp.cyan('')
+                # text = codefast.fp.cyan('')
+                text = ''
                 for seg in self(task):
-                    text += codefast.fp.cyan(seg)
+                    text += seg
+                    # text += codefast.fp.cyan(seg)
                 if len(text) <= 0:
                     continue
 
