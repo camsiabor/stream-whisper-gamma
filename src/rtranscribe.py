@@ -112,7 +112,13 @@ class RTranscriber(threading.Thread):
                 for seg in self(task):
                     text += seg
                     # text += codefast.fp.cyan(seg)
+
                 if len(text) <= 0:
+                    continue
+
+                if ((text.startswith("(") and text.endswith(")"))
+                        or (text.startswith("[") and text.endswith("]"))):
+                    self.logger.info("ignore text: %s" % text)
                     continue
 
                 task.text_transcribe = text

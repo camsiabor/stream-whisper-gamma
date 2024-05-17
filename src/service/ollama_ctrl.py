@@ -78,7 +78,9 @@ class OllamaCtrl:
         if bot.prompt_type == "none":
             prompt = text
         else:
-            prompt = f"translate following {src_name} to {des_name} and return ONLY the translated text: {text}"
+            prompt = f"translate following {src_name} to {des_name} " \
+                     "and return ONLY the translated text " \
+                     f"and explain nothing: {text}"
 
         message = {
             'role': 'user',
