@@ -1,5 +1,5 @@
+import logging
 import threading
-import traceback
 
 import pyaudiowpatch as pyaudio
 
@@ -23,6 +23,8 @@ class RListener(threading.Thread):
         self.transcriber = None
         self.translator = None
         self.renderer = None
+
+        self.logger = logging.getLogger('listener')
 
     def configure_recorder(self):
         self.recorder = rrecord.Recorder(
@@ -66,7 +68,7 @@ class RListener(threading.Thread):
 
     def run(self):
 
-        print("[listener] start")
+        self.logger.info("start")
         try:
             self.configure_recorder()
             self.configure_slicer()
@@ -89,9 +91,7 @@ class RListener(threading.Thread):
                     self.task_ctrl.terminate()
                     break
 
-        except KeyboardInterrupt:
-            print("KeyboardInterrupt: terminating...")
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(e, exc_info=True, stack_info=True)
         finally:
-            print("[listener] end")
+            self.logger.info("end")

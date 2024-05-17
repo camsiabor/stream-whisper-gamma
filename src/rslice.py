@@ -1,5 +1,6 @@
 import collections
 import io
+import logging
 import threading
 import traceback
 import typing
@@ -30,6 +31,8 @@ class RSlice(threading.Thread):
 
         self.__frames: typing.List[bytes] = []
 
+        self.logger = logging.getLogger('slicer')
+
     def get_current_frames(
             self,
             task: rtask.RTask,
@@ -46,7 +49,7 @@ class RSlice(threading.Thread):
         return buf.getvalue()
 
     def run(self):
-        print("[slicer] running")
+        self.logger.info("running")
         error_count = 0
 
         watcher = collections.deque(maxlen=self.slicer_maxlen)
@@ -62,8 +65,9 @@ class RSlice(threading.Thread):
                     is_speech = self.vad.is_speech(task.audio, task.param.sample_rate)
                 except Exception as ex:
                     is_speech = True
-                    print(f"[recorder] vad.is_speech() failed: {ex}")
-                    traceback.print_exc()
+                    self.logger.error(f"[recorder] vad.is_speech() failed: {ex}")
+                    self.logger.error(ex, exc_info=True, stack_info=True)
+
 
                 watcher.append(is_speech)
                 self.__frames.append(task.audio)
@@ -84,8 +88,8 @@ class RSlice(threading.Thread):
             except Exception:
                 traceback.print_exc()
                 if error_count > 3:
-                    print("[renderer] error_count > 3, breaking...")
+                    self.logger.warning("error_count > 3, breaking...")
                     break
                 error_count += 1
 
-        print("[slicer] end")
+        self.logger.info("end")

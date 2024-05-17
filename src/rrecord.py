@@ -1,6 +1,6 @@
+import logging
 import queue
 import threading
-import traceback
 
 import pyaudiowpatch as pyaudio
 import webrtcvad
@@ -53,6 +53,8 @@ class Recorder(threading.Thread):
         self.task_ctrl = task_ctrl
 
         self.output_data = queue.Queue()
+
+        self.logger = logging.getLogger('recorder')
 
         self.do_run = True
 
@@ -135,7 +137,7 @@ class Recorder(threading.Thread):
         device_channels = self.get_sample_channels()
         sample_rate = self.get_sample_rate()
 
-        print(f"[recorder] init | device: {self.device}")
+        self.logger.info(f"init | device: {self.device}")
 
         self.stream = self.p.open(format=self.data_format,
                                   channels=device_channels,
@@ -169,14 +171,15 @@ class Recorder(threading.Thread):
             self.task_ctrl.queue_slice.put(task)
 
     def run(self):
-        print("[recorder] running")
+        self.logger.info("running")
         try:
             if self.stream is None:
                 self.init()
             self.record()
-        except Exception:
-            traceback.print_exc()
-        print("[recorder] end")
+        except Exception as e:
+            self.logger.error(e, exc_info=True, stack_info=True)
+        finally:
+            self.logger.info("end")
 
     def stop_stream(self):
         self.stream.stop_stream()

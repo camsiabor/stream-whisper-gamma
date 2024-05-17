@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import threading
 import traceback
 
@@ -41,6 +42,8 @@ class RTranslator(threading.Thread):
         self.configure_ollama(cfg)
         self.configure_google(cfg)
 
+        self.logger = logging.getLogger('translator')
+
     def configure_google(self, cfg):
         google_cfg = sim.get(cfg, None, "translator", "agent_google")
         if google_cfg is None:
@@ -64,7 +67,7 @@ class RTranslator(threading.Thread):
         poe_cfg = sim.get(cfg, None, "poe")
         token = sim.get(poe_cfg, None, "token")
         if token is None:
-            print("[translator] poe token not found !")
+            self.logger.error("poe token not found !", exc_info=True, stack_info=True)
             return
 
         self.agent_poe = poe_api_wrapper.PoeApi(
@@ -73,7 +76,7 @@ class RTranslator(threading.Thread):
 
         bot_map = sim.get(poe_cfg, None, "translate")
         if bot_map is None:
-            print("[translator] poe translate bot not found !")
+            self.logger.error("poe translate bot not found !", exc_info=True, stack_info=True)
             return
         self.agent_poe_map = bot_map
 
@@ -86,11 +89,11 @@ class RTranslator(threading.Thread):
         ollama_cfg = sim.get(cfg, None, "ollama")
         self.agent_ollama_host = url = sim.get(ollama_cfg, None, "host")
         if url is None or len(url) <= 0:
-            print("[translator] ollama host not found !")
+            self.logger.error("[translator] ollama host not found !", exc_info=True, stack_info=True)
             return
         bot_map = sim.get(ollama_cfg, None, "translate")
         if bot_map is None:
-            print("[translator] ollama translate bot not found !")
+            self.logger.error("[translator] ollama translate bot not found !", exc_info=True, stack_info=True)
             return
         self.agent_ollama_map = bot_map
         self.agent_ollama = ollama.AsyncClient(host=self.agent_ollama_host)
@@ -168,14 +171,14 @@ class RTranslator(threading.Thread):
         if len(ret) <= 0 and self.agent_ollama is not None:
             try:
                 ret = await self.translate_ollama(text, lang_src)
-            except Exception:
-                traceback.print_exc()
+            except Exception as ex:
+                self.logger.error(ex, exc_info=True, stack_info=True)
 
         if len(ret) <= 0 and self.agent_poe is not None:
             try:
                 ret = self.translate_poe(text, lang_src)
-            except Exception:
-                traceback.print_exc()
+            except Exception as ex:
+                self.logger.error(ex, exc_info=True, stack_info=True)
 
         if len(ret) <= 0 and self.agent_google is not None:
             ret = self.translate_google(text, lang_src)
@@ -186,20 +189,17 @@ class RTranslator(threading.Thread):
         try:
             if self.agent_ollama is not None:
                 await self.translate_ollama("hello", "en")
-        except Exception:
-            print("[translator]")
-            traceback.print_exc()
-
-
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True, stack_info=True)
 
     async def cycle(self):
-        print("[translator] running")
+        self.logger.info("running")
         error_count = 0
 
         try:
             await self.warmup()
-        except Exception:
-            traceback.print_exc()
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True, stack_info=True)
 
         while self.do_run:
             try:
@@ -217,10 +217,10 @@ class RTranslator(threading.Thread):
             except Exception:
                 traceback.print_exc()
                 if error_count > 100:
-                    print("[translator] error_count > 3, breaking...")
+                    self.logger.warning("error_count > 3, breaking...")
                     break
                 error_count += 1
-        print("[translator] end")
+        self.logger.info("end")
 
     def run(self):
         loop = asyncio.new_event_loop()

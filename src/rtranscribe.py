@@ -1,4 +1,5 @@
 import io
+import logging
 import threading
 import traceback
 import typing
@@ -42,6 +43,8 @@ class RTranscriber(threading.Thread):
         self.do_run = True
 
         self._model = None
+
+        self.logger = logging.getLogger('transcriber')
 
     def init(self, force: bool = False) -> 'RTranscriber':
 
@@ -87,7 +90,7 @@ class RTranscriber(threading.Thread):
                 yield t
 
     def run(self):
-        print("[transcriber] running")
+        self.logger.info("running")
         error_count = 0
         while self.do_run:
             try:
@@ -96,7 +99,6 @@ class RTranscriber(threading.Thread):
                     continue
                 text = ''
                 for seg in self(task):
-                    # print(cf.fp.cyan(seg))
                     text += seg
                 if len(text) <= 0:
                     continue
@@ -106,7 +108,7 @@ class RTranscriber(threading.Thread):
             except Exception:
                 traceback.print_exc()
                 if error_count > 3:
-                    print("[transcriber] error_count > 3, breaking...")
+                    self.logger.warning("error_count > 3, breaking...")
                     break
                 error_count += 1
-        print("[transcriber] end")
+        self.logger.info("[transcriber] end")

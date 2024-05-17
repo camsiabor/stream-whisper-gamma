@@ -1,5 +1,5 @@
+import logging
 import threading
-import traceback
 
 from src import rtask
 
@@ -14,8 +14,10 @@ class RManifest(threading.Thread):
         self.task_ctrl = task_ctrl
         self.do_run = True
 
+        self.logger = logging.getLogger('manifest')
+
     def run(self):
-        print("[manifest] running")
+        self.logger.info("running")
         error_count = 0
         while self.do_run:
             try:
@@ -29,14 +31,15 @@ class RManifest(threading.Thread):
 
                 # stamp = "[%.2fs -> %.2fs]" % (task.text_start, task.text_end)
 
-                print(f"[{task.text_info.duration}] ------------------------------------------------")
-                print(f"[s] {task.text_transcribe}")
-                print(f"[d] {text_target}")
+                self.logger.info(f"[{task.text_info.duration}] ------------------------------------------------")
+                self.logger.info(f"[s] {task.text_transcribe}")
+                self.logger.info(f"[d] {text_target}")
 
-            except Exception:
-                traceback.print_exc()
+            except Exception as ex:
+                self.logger.error(ex, exc_info=True, stack_info=True)
                 if error_count > 3:
-                    print("[renderer] error_count > 3, breaking...")
+                    self.logger.warning("error_count > 3, breaking...")
                     break
                 error_count += 1
-        print("[manifest] end")
+
+        self.logger.info("end")
