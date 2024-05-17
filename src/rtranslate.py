@@ -3,10 +3,10 @@ import logging
 import threading
 import traceback
 
-import src.service.google.translator
 from src import rtask
 from src.common import sim
 from src.service import poe_ctrl, ollama_ctrl
+from src.service.google import google_trans
 
 
 class RTranslator(threading.Thread):
@@ -28,6 +28,7 @@ class RTranslator(threading.Thread):
 
         self.agent_poe = poe_ctrl.PoeCtrl(cfg)
         self.agent_ollama = ollama_ctrl.OllamaCtrl(cfg)
+        self.agent_google = google_trans.GoogleTransCtrl(cfg)
 
         self.configure_poe(cfg)
         self.configure_ollama(cfg)
@@ -36,17 +37,10 @@ class RTranslator(threading.Thread):
         self.logger = logging.getLogger('translator')
 
     def configure_google(self, cfg):
-        google_cfg = sim.get(cfg, None, "translator", "agent_google")
-        if google_cfg is None:
+        active = sim.get(cfg, False, "translator", "agent_google", "active")
+        if not active:
             return
-        if not sim.get(google_cfg, True, "active"):
-            return
-        domain = sim.get(google_cfg, "hk", "domain")
-        timeout = sim.get(google_cfg, 5, "timeout")
-        self.agent_google = src.service.google.translator.GoogleTranslator(
-            url_suffix=domain,
-            timeout=timeout,
-        )
+        self.agent_google.configure()
 
     def configure_poe(self, cfg):
         active = sim.get(cfg, False, "translator", "agent_poe", "active")
@@ -59,11 +53,6 @@ class RTranslator(threading.Thread):
         if not active:
             return
         self.agent_ollama.configure("translate")
-
-    def translate_google(self, text, lang_src):
-        return self.agent_google.translate(
-            text, self.lang_des, lang_src
-        )
 
     async def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
@@ -84,7 +73,7 @@ class RTranslator(threading.Thread):
                 self.logger.error(ex, exc_info=True, stack_info=True)
 
         if len(ret) <= 0 and self.agent_google is not None:
-            ret = self.translate_google(text, lang_src)
+            ret = self.agent_google.translate(text, lang_src, self.lang_des)
 
         return ret
 

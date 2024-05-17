@@ -16,8 +16,7 @@ class PoeCtrl:
         self.logger = logging.getLogger('poe')
 
     def configure(self, domain) -> 'PoeCtrl':
-        poe_cfg = sim.get(self.cfg, None, "poe")
-
+        poe_cfg = sim.get(self.cfg, {}, "poe")
         self.active = sim.get(poe_cfg, False, "active")
         if not self.active:
             return self

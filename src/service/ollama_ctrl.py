@@ -19,7 +19,7 @@ class OllamaCtrl:
         self.logger = logging.getLogger('ollama')
 
     def configure(self, domain) -> 'OllamaCtrl':
-        ollama_cfg = sim.get(self.cfg, None, "ollama")
+        ollama_cfg = sim.get(self.cfg, {}, "ollama")
         self.active = sim.get(ollama_cfg, False, "active")
         if not self.active:
             return self
