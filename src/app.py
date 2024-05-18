@@ -21,6 +21,7 @@ def init_logger():
         logging.config.dictConfig(config)
 
     logging.getLogger("faster_whisper").setLevel(logging.ERROR)
+    logging.getLogger("huggingface_hub.file_download").setLevel(logging.INFO)
 
 
 def load_config():
@@ -57,6 +58,7 @@ if __name__ == "__main__":
 
     init_logger()
     logger = logging.getLogger('main')
+
     try:
         cfg = load_config()
         p = pyaudio.PyAudio()
