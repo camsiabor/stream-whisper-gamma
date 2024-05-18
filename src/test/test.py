@@ -1,8 +1,6 @@
+import datetime
 import time
 
-import noisereduce
-import numpy
-import numpy as np
 import ollama
 import poe_api_wrapper
 import pyaudiowpatch
@@ -87,6 +85,10 @@ def test_time():
     print(finish - create)
 
 
+sum_len = 0
+time_prev = 0
+
+
 def test_denoising():
     # https://github.com/timsainb/noisereduce
     # https://github.com/timsainb/noisereduce/issues/44
@@ -121,14 +123,23 @@ def test_denoising():
     )
     recorder.init()
 
-    def callback(frame, task: rtask.RTask):
-        data = numpy.frombuffer(frame, dtype=np.int16)
-        task.audio = noisereduce.reduce_noise(y=data, sr=int(task.param.sample_rate))
+    def callback(frame, task):
+        global sum_len
+        global time_prev
+
+        sum_len += len(frame)
+        time_next = time.time_ns() / 1_000_000
+        if time_prev <= 0:
+            time_prev = time_next
+
+        if time_next - time_prev > 100:
+            current_time = datetime.datetime.now()
+            t = current_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            print(f"{t}: {sum_len}")
+            time_prev = time_next
+            sum_len = 0
 
     recorder.record(callback=callback)
-
-
-
 
 
 if __name__ == '__main__':
