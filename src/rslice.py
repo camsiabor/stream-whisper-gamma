@@ -69,6 +69,8 @@ class RSlice(threading.Thread):
                     data = numpy.frombuffer(task.audio, dtype=numpy.int16)
                     task.audio = noisereduce.reduce_noise(
                         y=data,
+                        prop_decrease=1.0,
+                        # use_torch=True,
                         sr=int(task.param.sample_rate)
                     )
                 except Exception as ex:
