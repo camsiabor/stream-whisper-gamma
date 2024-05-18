@@ -75,13 +75,6 @@ class RTranscriber(threading.Thread):
 
         data = task.audio
 
-        """
-        data = noisereduce.reduce_noise(
-            y=io.BytesIO(data),
-            sr=task.param.sample_rate,
-        )
-        """
-
         segments, info = self._model.transcribe(
             audio=io.BytesIO(data),
             # the pathes explored by the beam search

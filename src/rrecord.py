@@ -5,7 +5,7 @@ import threading
 import pyaudiowpatch as pyaudio
 import webrtcvad
 
-import rtask
+from src import rtask
 
 
 class ARException(Exception):
@@ -25,10 +25,6 @@ class Recorder(threading.Thread):
     def __init__(self,
                  p_audio: pyaudio.PyAudio,
                  task_ctrl: rtask.RTaskControl,
-                 device: dict = None,
-                 data_format: int = pyaudio.paInt16,
-                 chunk_size: int = 1024,  # 512 works
-                 frame_duration: int = 10,  # 10 works ONLY!!!
                  ):
 
         super().__init__()
@@ -40,15 +36,15 @@ class Recorder(threading.Thread):
         self.vad.set_mode(1)
 
         self.stream = None
-        self.device = device
+        self.device = None
 
-        self.sample_rate = 0
-        self.data_format = data_format
+        self.sample_rate = 48000
+        self.data_format = pyaudio.paInt16
         self.output_channels = 0
-        self.chunk_size = chunk_size
+        self.chunk_size = 512
         self.frame_size = 0
 
-        self.frame_duration = frame_duration
+        self.frame_duration = 10
 
         self.task_ctrl = task_ctrl
 
@@ -56,7 +52,18 @@ class Recorder(threading.Thread):
 
         self.logger = logging.getLogger('recorder')
 
+        self.configure(self.task_ctrl.cfg)
+
         self.do_run = True
+
+    def configure(self, cfg: dict):
+
+        r_cfg = cfg.get("recorder", {})
+
+        self.sample_rate = r_cfg.get("sample_rate", 48000)
+        self.data_format = r_cfg.get("data_format", pyaudio.paInt16)
+        self.chunk_size = r_cfg.get("chunk_size", 512)
+        self.frame_duration = r_cfg.get("frame_duration", 10)
 
     def __enter__(self) -> 'Recorder':
         pass
@@ -150,7 +157,7 @@ class Recorder(threading.Thread):
 
         return self.stream
 
-    def record(self):
+    def record(self, callback=None):
         frame_size = self.get_frame_size()
         sample_rate = self.get_sample_rate()
         sample_width = self.get_sample_width()
@@ -172,6 +179,10 @@ class Recorder(threading.Thread):
                 sample_channels=sample_channels,
                 info=info,
             )
+
+            if callback is not None:
+                callback(frame, task)
+
             self.task_ctrl.queue_slice.put(task)
 
     def run(self):

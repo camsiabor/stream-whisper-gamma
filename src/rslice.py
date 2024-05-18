@@ -6,6 +6,8 @@ import traceback
 import typing
 import wave
 
+import noisereduce
+import numpy
 import webrtcvad
 
 from src import rtask
@@ -61,11 +63,18 @@ class RSlice(threading.Thread):
                 if task is None:
                     break
                 task.info.time_set("slice")
+
+                try:
+                    data = numpy.frombuffer(task.audio, dtype=numpy.int16)
+                    task.audio = noisereduce.reduce_noise(y=data, sr=int(task.param.sample_rate))
+                except Exception as ex:
+                    self.logger.error(f"noisereduce.reduce_noise failed: {ex}")
+
                 try:
                     is_speech = self.vad.is_speech(task.audio, task.param.sample_rate)
                 except Exception as ex:
                     is_speech = True
-                    self.logger.error(f"[recorder] vad.is_speech() failed: {ex}")
+                    self.logger.error(f"vad.is_speech() failed: {ex}")
                     self.logger.error(ex, exc_info=True, stack_info=True)
 
                 watcher.append(is_speech)

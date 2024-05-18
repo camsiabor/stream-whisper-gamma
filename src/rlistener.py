@@ -30,9 +30,6 @@ class RListener(threading.Thread):
         self.recorder = rrecord.Recorder(
             p_audio=self.p,
             task_ctrl=self.task_ctrl,
-            data_format=self.cfg['recorder'].get('data_format', pyaudio.paInt16),
-            chunk_size=self.cfg['recorder'].get('chunk_size', 512),
-            frame_duration=self.cfg['recorder'].get('frame_duration', 10),
         )
 
     def configure_slicer(self):

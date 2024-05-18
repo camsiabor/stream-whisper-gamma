@@ -1,11 +1,24 @@
 import time
 
+import noisereduce
+import numpy
+import numpy as np
 import ollama
 import poe_api_wrapper
+import pyaudiowpatch
 import yaml
 
 import src.service.google.translator as googletrans
+from src import rtask
 from src.common import sim
+from src.rrecord import Recorder
+
+
+def test_config():
+    config_path = "../../config/cfg.yaml"
+    with open(config_path, mode='r', encoding='utf-8') as config_file:
+        cfg = yaml.safe_load(config_file)
+    return cfg
 
 
 def test_google():
@@ -74,14 +87,52 @@ def test_time():
     print(finish - create)
 
 
+def test_denoising():
+    # https://github.com/timsainb/noisereduce
+    # https://github.com/timsainb/noisereduce/issues/44
+    # https://gist.github.com/PandaWhoCodes/9f3dc05faee761149842e43b56e6ee8c
+    """
+           data = noisereduce.reduce_noise(
+               y=io.BytesIO(data),
+               sr=task.param.sample_rate,
+           )
+           """
+
+    """
+    # Assuming you have audio data in 'audio_bytes'        
+    audio_array = noisereduce.frombuffer(data, dtype=noisereduce.int16)
+
+    # Estimate noise profile (optional)
+    noise_profile = noisereduce.profile(audio_array)
+
+    # Apply noise reduction
+    denoised_audio = noisereduce.reduce_noise(
+        y=audio_array,
+        sr=task.param.sample_rate,
+        profile=noise_profile
+    )
+    """
+    cfg = test_config()
+    p_audio = pyaudiowpatch.PyAudio()
+    task_ctrl = rtask.RTaskControl(cfg=cfg)
+    recorder = Recorder(
+        p_audio=p_audio,
+        task_ctrl=task_ctrl,
+    )
+    recorder.init()
+
+    def callback(frame, task: rtask.RTask):
+        data = numpy.frombuffer(frame, dtype=np.int16)
+        task.audio = noisereduce.reduce_noise(y=data, sr=int(task.param.sample_rate))
+
+    recorder.record(callback=callback)
+
+
+
+
+
 if __name__ == '__main__':
     # asyncio.run(test_ollama())
-
     # test_poe()
-
-    s = 'huggingface_hub.file_download'
-
-
-
-    test_time()
+    test_denoising()
     pass
