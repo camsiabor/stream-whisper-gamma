@@ -12,6 +12,8 @@ import webrtcvad
 from src import rtask
 
 
+# from pyAudioAnalysis import audioSegmentation
+
 class RSlice(threading.Thread):
 
     def __init__(
@@ -57,8 +59,10 @@ class RSlice(threading.Thread):
             self.__frames.clear()
         return buf.getvalue()
 
-    def run(self):
-        self.logger.info("running")
+    def slice_ex(self):
+        pass
+
+    def slice(self):
         error_count = 0
 
         watcher = collections.deque(maxlen=self.slicer_maxlen)
@@ -114,4 +118,7 @@ class RSlice(threading.Thread):
                     break
                 error_count += 1
 
+    def run(self):
+        self.logger.info("running")
+        self.slice()
         self.logger.info("end")

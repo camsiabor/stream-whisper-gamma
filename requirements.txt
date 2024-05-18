@@ -24,4 +24,5 @@ poe-api-wrapper~=1.4.1
 PyYAML~=6.0.1
 loguru~=0.7.2
 nest_asyncio~=1.6.0
-ollama
+ollama~=0.2.0
+noisereduce~=3.0.2

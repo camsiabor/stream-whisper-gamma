@@ -187,27 +187,38 @@ class Recorder(threading.Thread):
             if all_frames is None or len(all_frames) <= 0:
                 continue
 
-            task = rtask.RTask(
-                audio=all_frames,
-                sample_rate=sample_rate,
-                sample_width=sample_width,
-                sample_channels=sample_channels,
-            )
+            self.to_slice(all_frames, sample_rate, sample_width, sample_channels, callback)
 
-            if callback is not None:
-                r = callback(all_frames, task)
-                if r is not None and r is False:
-                    continue
+    def to_slice(
+            self,
+            frame,
+            sample_rate,
+            sample_width,
+            sample_channels,
+            callback=None
+    ):
 
-            self.task_ctrl.queue_slice.put(task)
+        task = rtask.RTask(
+            audio=frame,
+            sample_rate=sample_rate,
+            sample_width=sample_width,
+            sample_channels=sample_channels,
+        )
+
+        if callback is not None:
+            r = callback(frame, task)
+            if r is not None and r is False:
+                return
+
+        self.task_ctrl.queue_slice.put(task)
 
     def record(self, callback=None):
 
-        """
         self.do_run = True
-        self.flush_thread = threading.Thread(target=self.flush, args=(callback,))
-        self.flush_thread.start()
-        """
+
+        if self.flush_interval > 0:
+            self.flush_thread = threading.Thread(target=self.flush, args=(callback,))
+            self.flush_thread.start()
 
         frame_size = self.get_frame_size()
         sample_rate = self.get_sample_rate()
@@ -217,27 +228,16 @@ class Recorder(threading.Thread):
             frame = self.stream.read(frame_size, exception_on_overflow=False)
             if not frame:
                 continue
-            """
-            self.frame_lock.acquire()
-            try:
-                self.frame_cache.append(frame)
-            finally:
-                self.frame_lock.release()
-            """
 
-            task = rtask.RTask(
-                audio=frame,
-                sample_rate=sample_rate,
-                sample_width=sample_width,
-                sample_channels=sample_channels,
-            )
+            if self.flush_interval > 0:
+                self.frame_lock.acquire()
+                try:
+                    self.frame_cache.append(frame)
+                finally:
+                    self.frame_lock.release()
+                continue
 
-            if callback is not None:
-                r = callback(frame, task)
-                if r is not None and r is False:
-                    continue
-
-            self.task_ctrl.queue_slice.put(task)
+            self.to_slice(frame, sample_rate, sample_width, sample_channels, callback)
 
         self.do_run = False
 

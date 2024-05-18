@@ -106,7 +106,7 @@ class RTranscriber(threading.Thread):
         while self.do_run:
             try:
                 task: rtask.RTask = self.task_ctrl.queue_transcribe.get()
-                if not task.audio or task.audio is None:
+                if task.audio is None:
                     continue
                 task.info.time_set("transcribe")
                 # text = codefast.fp.cyan('')
