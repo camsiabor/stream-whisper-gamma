@@ -100,7 +100,7 @@ class PoeCtrl:
             prompt = text
         else:
             prompt = f"translate following {src_name} to {des_name} " \
-                     "and return ONLY the translated text " \
+                     f"and reply ONLY the translated {des_name} text " \
                      f"and explain nothing: {text}"
 
         if bot.chat_id is None:

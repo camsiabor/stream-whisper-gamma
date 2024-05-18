@@ -48,9 +48,14 @@ class RManifest(threading.Thread):
                 task.info.time_set("manifest")
                 task.info.time_set_as_str("manifest_str")
                 time_diff = task.info.time_diff(head="create", tail="manifest")
+                pending_slice = self.task_ctrl.queue_slice.qsize()
+                pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
                 print(
-                    f"duration: {task.text_info.duration} | consume: {time_diff} | {task.info.time_get('create_str')} -> {task.info.time_get('manifest_str')}"
-                    "------------------- ")
+                    f"duration: {task.text_info.duration} | "
+                    f"consume: {time_diff} | "
+                    f"slice: {pending_slice} | transcribe: {pending_transcribe} | "
+                    f"{task.info.time_get('create_str')} -> {task.info.time_get('manifest_str')} | "
+                    "--- ")
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
