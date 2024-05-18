@@ -72,8 +72,8 @@ class OllamaCtrl:
 
         bot = self.get_bot("translate", lang_src)
 
-        src_name = langutil.LANGUAGES[lang_src]
-        des_name = langutil.LANGUAGES[lang_des]
+        src_name = langutil.LANGUAGES.get(lang_src, "en")
+        des_name = langutil.LANGUAGES.get(lang_des, "en")
 
         if bot.prompt_type == "none":
             prompt = text
