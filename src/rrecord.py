@@ -3,7 +3,6 @@ import queue
 import threading
 import time
 
-import numpy
 import pyaudiowpatch as pyaudio
 import webrtcvad
 
@@ -173,50 +172,74 @@ class Recorder(threading.Thread):
 
         while self.do_run:
             time.sleep(self.flush_interval)
+
+            all_frames = None
             self.frame_lock.acquire()
             try:
                 if len(self.frame_cache) <= 0:
                     continue
 
-                all_frames = numpy.concatenate(self.frame_cache)
-                self.frame_cache.clear()
-
-                task = rtask.RTask(
-                    audio=all_frames,
-                    sample_rate=sample_rate,
-                    sample_width=sample_width,
-                    sample_channels=sample_channels,
-                )
-
-                if callback is not None:
-                    r = callback(all_frames, task)
-                    if r is not None and r is False:
-                        continue
-
-                self.task_ctrl.queue_slice.put(task)
+                all_frames = b''.join(self.frame_cache)
+                self.frame_cache = []
             finally:
                 self.frame_lock.release()
 
+            if all_frames is None or len(all_frames) <= 0:
+                continue
+
+            task = rtask.RTask(
+                audio=all_frames,
+                sample_rate=sample_rate,
+                sample_width=sample_width,
+                sample_channels=sample_channels,
+            )
+
+            if callback is not None:
+                r = callback(all_frames, task)
+                if r is not None and r is False:
+                    continue
+
+            self.task_ctrl.queue_slice.put(task)
+
     def record(self, callback=None):
 
+        """
         self.do_run = True
         self.flush_thread = threading.Thread(target=self.flush, args=(callback,))
         self.flush_thread.start()
+        """
 
         frame_size = self.get_frame_size()
+        sample_rate = self.get_sample_rate()
+        sample_width = self.get_sample_width()
+        sample_channels = self.get_sample_channels()
         while self.do_run:
             frame = self.stream.read(frame_size, exception_on_overflow=False)
             if not frame:
                 continue
+            """
             self.frame_lock.acquire()
             try:
                 self.frame_cache.append(frame)
             finally:
                 self.frame_lock.release()
+            """
+
+            task = rtask.RTask(
+                audio=frame,
+                sample_rate=sample_rate,
+                sample_width=sample_width,
+                sample_channels=sample_channels,
+            )
+
+            if callback is not None:
+                r = callback(frame, task)
+                if r is not None and r is False:
+                    continue
+
+            self.task_ctrl.queue_slice.put(task)
 
         self.do_run = False
-
-
 
     def run(self):
         self.logger.info("running")

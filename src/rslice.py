@@ -2,7 +2,6 @@ import collections
 import io
 import logging
 import threading
-import traceback
 import typing
 import wave
 
@@ -18,8 +17,6 @@ class RSlice(threading.Thread):
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
-            slicer_maxlen: int = 10,
-            slicer_ratio: float = 0.5,
     ):
         super().__init__()
         self.task_ctrl = task_ctrl
@@ -28,12 +25,22 @@ class RSlice(threading.Thread):
         self.vad = webrtcvad.Vad()
         self.vad.set_mode(1)
 
-        self.slicer_maxlen = slicer_maxlen
-        self.slicer_ratio = slicer_ratio
+        self.slicer_maxlen = 10
+        self.slicer_ratio = 0.5
+        self.denoise_ratio = 0
 
         self.__frames: typing.List[bytes] = []
 
         self.logger = logging.getLogger('slicer')
+
+        self.configure()
+
+    def configure(self) -> 'RSlice':
+        cfg = self.task_ctrl.cfg["slicer"]
+        self.slicer_maxlen = cfg.get("slicer_maxlen", 10)
+        self.slicer_ratio = cfg.get("slicer_ratio", 0.5)
+        self.denoise_ratio = cfg.get("denoise_ratio", 0)
+        return self
 
     def get_current_frames(
             self,
@@ -64,23 +71,24 @@ class RSlice(threading.Thread):
                     break
                 task.info.time_set("slice")
 
-                try:
-                    # librosa may get some numpy.float error, fix librosa utils to do the hack
-                    data = numpy.frombuffer(task.audio, dtype=numpy.int16)
-                    task.audio = noisereduce.reduce_noise(
-                        y=data,
-                        prop_decrease=1.0,
-                        # use_torch=True,
-                        sr=int(task.param.sample_rate)
-                    )
-                except Exception as ex:
-                    self.logger.error(f"noisereduce.reduce_noise failed: {ex}")
+                if self.denoise_ratio > 0:
+                    try:
+                        # librosa may get some numpy.float error, fix librosa utils to do the hack
+                        data = numpy.frombuffer(task.audio, dtype=numpy.int16)
+                        task.audio = noisereduce.reduce_noise(
+                            y=data,
+                            prop_decrease=self.denoise_ratio,
+                            # use_torch=True,
+                            sr=int(task.param.sample_rate)
+                        )
+                    except Exception as ex:
+                        self.logger.error(f"noisereduce.reduce_noise failed: {ex}", stack_info=True)
 
                 try:
                     is_speech = self.vad.is_speech(task.audio, task.param.sample_rate)
                 except Exception as ex:
-                    is_speech = True
-                    self.logger.error(f"vad.is_speech() failed: {ex}")
+                    is_speech = False
+                    self.logger.error(f"vad.is_speech() failed - speech len {len(task.audio)}- {ex}")
                     self.logger.error(ex, exc_info=True, stack_info=True)
 
                 watcher.append(is_speech)
@@ -99,8 +107,8 @@ class RSlice(threading.Thread):
                         task.audio = self.get_current_frames(task, clear=True)
                         self.task_ctrl.queue_transcribe.put(task)
 
-            except Exception:
-                traceback.print_exc()
+            except Exception as ex:
+                self.logger.error(ex, exc_info=True, stack_info=True)
                 if error_count > 3:
                     self.logger.warning("error_count > 3, breaking...")
                     break

@@ -35,8 +35,6 @@ class RListener(threading.Thread):
     def configure_slicer(self):
         self.slicer = rslice.RSlice(
             task_ctrl=self.task_ctrl,
-            slicer_maxlen=self.cfg['slicer'].get('slicer_maxlen', 10),
-            slicer_ratio=self.cfg['slicer'].get('slicer_ratio', 0.5),
         )
 
     def configure_transcriber(self):
