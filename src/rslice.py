@@ -65,8 +65,12 @@ class RSlice(threading.Thread):
                 task.info.time_set("slice")
 
                 try:
+                    # librosa may get some numpy.float error, fix librosa utils to do the hack
                     data = numpy.frombuffer(task.audio, dtype=numpy.int16)
-                    task.audio = noisereduce.reduce_noise(y=data, sr=int(task.param.sample_rate))
+                    task.audio = noisereduce.reduce_noise(
+                        y=data,
+                        sr=int(task.param.sample_rate)
+                    )
                 except Exception as ex:
                     self.logger.error(f"noisereduce.reduce_noise failed: {ex}")
 
