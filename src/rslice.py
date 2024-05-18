@@ -107,8 +107,8 @@ class RSlice(threading.Thread):
                     break
 
                 if task_begin is None:
-                    task_begin = task
                     task.info.time_set("slice")
+                    task_begin = task
 
                 if self.denoise_ratio > 0:
                     try:
@@ -144,8 +144,7 @@ class RSlice(threading.Thread):
                     if num_unvoiced > self.slicer_ratio * watcher.maxlen:
                         triggered = False
                         task.audio = self.get_current_frames(task, clear=True)
-                        task.info.times["slice"] = task_begin.info.times["slice"]
-                        task.info.times["create_str"] = task_begin.info.times["create_str"]
+                        task.info = task_begin.info
                         self.task_ctrl.queue_transcribe.put(task)
                         task_begin = None
 
