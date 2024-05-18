@@ -29,6 +29,7 @@ class RSlice(threading.Thread):
 
         self.slicer_maxlen = 10
         self.slicer_ratio = 0.5
+        self.slice_mode = ""
         self.denoise_ratio = 0
 
         self.__frames: typing.List[bytes] = []
@@ -42,6 +43,7 @@ class RSlice(threading.Thread):
         self.slicer_maxlen = cfg.get("slicer_maxlen", 10)
         self.slicer_ratio = cfg.get("slicer_ratio", 0.5)
         self.denoise_ratio = cfg.get("denoise_ratio", 0)
+        self.slice_mode = cfg.get("slice_mode", "vad").lower()
         return self
 
     def get_current_frames(
@@ -59,10 +61,38 @@ class RSlice(threading.Thread):
             self.__frames.clear()
         return buf.getvalue()
 
-    def slice_ex(self):
-        pass
+    def slice_by_interval(self):
+        error_count = 0
+        while self.do_run:
+            try:
+                task: rtask.RTask = self.task_ctrl.queue_slice.get()
+                if task is None:
+                    break
+                task.info.time_set("slice")
 
-    def slice(self):
+                if self.denoise_ratio > 0:
+                    try:
+                        # librosa may get some numpy.float error, fix librosa utils to do the hack
+                        data = numpy.frombuffer(task.audio, dtype=numpy.int16)
+                        task.audio = noisereduce.reduce_noise(
+                            y=data,
+                            prop_decrease=self.denoise_ratio,
+                            # use_torch=True,
+                            sr=int(task.param.sample_rate)
+                        )
+                    except Exception as ex:
+                        self.logger.error(f"noisereduce.reduce_noise failed: {ex}", stack_info=True)
+
+                task.audio = self.get_current_frames(task, clear=True)
+                self.task_ctrl.queue_transcribe.put(task)
+            except Exception as ex:
+                self.logger.error(ex, exc_info=True, stack_info=True)
+                if error_count > 3:
+                    self.logger.warning("error_count > 3, breaking...")
+                    break
+                error_count += 1
+
+    def slice_by_vad(self):
         error_count = 0
 
         watcher = collections.deque(maxlen=self.slicer_maxlen)
@@ -120,5 +150,8 @@ class RSlice(threading.Thread):
 
     def run(self):
         self.logger.info("running")
-        self.slice()
+        if self.slice_mode == "vad":
+            self.slice_by_vad()
+        if self.slice_mode == "interval":
+            self.slice_by_interval()
         self.logger.info("end")
