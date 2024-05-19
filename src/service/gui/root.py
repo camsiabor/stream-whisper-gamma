@@ -52,13 +52,21 @@ class RGuiRoot:
 
         self.main.overrideredirect(True)
 
-        button_test = tk.Button(
+        button_exit = tk.Button(
+            self.main,
+            text="EXIT",
+            bg="black", fg="white",
+            command=lambda: self.main.destroy(),
+        )
+        button_exit.pack(side="right", padx=3, pady=0)
+
+        button_add = tk.Button(
             self.main,
             text="ADD",
             bg="black", fg="white",
             command=self.click_add,
         )
-        button_test.pack(side="right", padx=3, pady=0)
+        button_add.pack(side="right", padx=3, pady=0)
 
         button_clear = tk.Button(
             self.main,
