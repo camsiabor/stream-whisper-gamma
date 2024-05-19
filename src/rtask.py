@@ -1,4 +1,5 @@
 import datetime
+import logging
 import queue
 import time
 
@@ -67,8 +68,12 @@ class RInfo:
 
     def time_diff(self, head: str, tail: str, store: str = None, raise_if_none=False):
         diff = self.time_get(tail, raise_if_none) - self.time_get(head, raise_if_none)
+        if diff < 0:
+            logging.warning(f"Time diff {head} -> {tail} is negative: {diff}")
+
         if store is not None:
             self.elapsed[store] = diff
+
         return diff
 
 

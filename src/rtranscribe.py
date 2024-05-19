@@ -115,12 +115,15 @@ class RTranscriber(threading.Thread):
                     text += seg
                     # text += codefast.fp.cyan(seg)
 
+                text = text.strip()
                 if len(text) <= 0:
                     continue
 
-                if ((text.startswith("(") and text.endswith(")"))
+                if (
+                        (text.startswith("(") and text.endswith(")"))
                         or (text.startswith("[") and text.endswith("]"))
-                        or (text.startswith("*") and text.endswith("*"))):
+                        or (text.startswith("*") and text.endswith("*"))
+                ):
                     self.logger.info("ignore text: %s" % text)
                     continue
 

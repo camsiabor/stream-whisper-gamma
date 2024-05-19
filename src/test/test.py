@@ -145,5 +145,6 @@ def test_denoising():
 if __name__ == '__main__':
     # asyncio.run(test_ollama())
     # test_poe()
-    test_denoising()
+    # test_denoising()
+    print("()" == "()")
     pass
