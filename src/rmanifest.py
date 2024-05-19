@@ -14,8 +14,18 @@ class RManifest(threading.Thread):
         super().__init__()
         self.task_ctrl = task_ctrl
         self.do_run = True
-
+        self.show_transcribe = True
+        self.show_translated = True
+        self.show_performance = False
         self.logger = logging.getLogger(name='manifest')
+        self.configure()
+
+    def configure(self) -> 'RManifest':
+        cfg = self.task_ctrl.cfg.get("manifest", {})
+        self.show_transcribe = sim.get(cfg, True, "show_transcribe")
+        self.show_translated = sim.get(cfg, True, "show_translated")
+        self.show_performance = sim.get(cfg, False, "show_performance")
+        return self
 
     def run(self):
         self.logger.info("running")
@@ -43,27 +53,32 @@ class RManifest(threading.Thread):
                 # print("[s] %s" % task.text_transcribe.encode('utf-8'))
                 # print("[d] %s" % text_target.encode('utf-8'))
 
-                print(f"[s] {task.text_transcribe}")
-                print(f"[d] {text_target}")
+                if self.show_transcribe:
+                    print(f"[s] {task.text_transcribe}")
+
+                if self.show_translated:
+                    print(f"[d] {text_target}")
+
                 task.info.time_set("manifest")
                 # task.info.time_set_as_str("manifest_str")
                 task.info.time_diff("translate", "manifest", store="manifest")
                 task.info.time_diff(head="create", tail="manifest", store="all")
 
-                diff_slice = task.info.time_elapsed_get("slice")
-                diff_transcribe = task.info.time_elapsed_get("transcribe")
-                diff_translate = task.info.time_elapsed_get("translate")
-                diff_manifest = task.info.time_elapsed_get("manifest")
-                diff_all = diff_slice + diff_transcribe + diff_transcribe + diff_manifest
+                if self.show_performance:
+                    diff_slice = task.info.time_elapsed_get("slice")
+                    diff_transcribe = task.info.time_elapsed_get("transcribe")
+                    diff_translate = task.info.time_elapsed_get("translate")
+                    diff_manifest = task.info.time_elapsed_get("manifest")
+                    diff_all = diff_slice + diff_transcribe + diff_transcribe + diff_manifest
 
-                pending_slice = self.task_ctrl.queue_slice.qsize()
-                pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
-                print(
-                    f"duration: {task.text_info.duration} | "
-                    f"all: {diff_all} | slice: {diff_slice} | transcribe: {diff_transcribe} | "
-                    f"translate: {diff_translate} | manifest: {diff_manifest} | "
-                    f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
-                    "--- ")
+                    pending_slice = self.task_ctrl.queue_slice.qsize()
+                    pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
+                    print(
+                        f"duration: {task.text_info.duration} | "
+                        f"all: {diff_all} | slice: {diff_slice} | transcribe: {diff_transcribe} | "
+                        f"translate: {diff_translate} | manifest: {diff_manifest} | "
+                        f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
+                        "--- ")
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

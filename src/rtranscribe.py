@@ -119,7 +119,8 @@ class RTranscriber(threading.Thread):
                     continue
 
                 if ((text.startswith("(") and text.endswith(")"))
-                        or (text.startswith("[") and text.endswith("]"))):
+                        or (text.startswith("[") and text.endswith("]"))
+                        or (text.startswith("*") and text.endswith("*"))):
                     self.logger.info("ignore text: %s" % text)
                     continue
 

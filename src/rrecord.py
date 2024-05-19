@@ -68,7 +68,7 @@ class Recorder(threading.Thread):
 
         self.sample_rate = r_cfg.get("sample_rate", 48000)
         self.data_format = r_cfg.get("data_format", pyaudio.paInt16)
-        self.chunk_size = r_cfg.get("chunk_size", 512)
+        self.chunk_size = r_cfg.get("chunk_size", 65536)
         self.flush_interval = r_cfg.get("flush_interval", 0.1)
         self.frame_duration = r_cfg.get("frame_duration", 10)
 

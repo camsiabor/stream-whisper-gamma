@@ -27,8 +27,10 @@ class RSlice(threading.Thread):
         self.vad = webrtcvad.Vad()
         self.vad.set_mode(1)
 
-        self.slicer_maxlen = 10
-        self.slicer_ratio = 0.5
+        self.buffer_len = 10
+        self.speech_len = 5
+        self.non_speech_len = 5
+        self.silence_ratio = 0.5
         self.slice_mode = ""
         self.denoise_ratio = 0
 
@@ -39,9 +41,10 @@ class RSlice(threading.Thread):
         self.configure()
 
     def configure(self) -> 'RSlice':
-        cfg = self.task_ctrl.cfg["slicer"]
-        self.slicer_maxlen = cfg.get("slicer_maxlen", 10)
-        self.slicer_ratio = cfg.get("slicer_ratio", 0.5)
+        cfg = self.task_ctrl.cfg.get("slicer", {})
+        self.buffer_len = cfg.get("buffer_len", 10)
+        self.speech_len = cfg.get("speech_len", 5)
+        self.non_speech_len = cfg.get("non_speech_len", 5)
         self.denoise_ratio = cfg.get("denoise_ratio", 0)
         self.slice_mode = cfg.get("slice_mode", "vad").lower()
         return self
@@ -95,10 +98,11 @@ class RSlice(threading.Thread):
     def slice_by_vad(self):
         error_count = 0
 
-        watcher = collections.deque(maxlen=self.slicer_maxlen)
+        watcher = collections.deque(maxlen=self.buffer_len)
         triggered = False
 
         task_head = None
+
 
         while self.do_run:
             try:
@@ -134,14 +138,14 @@ class RSlice(threading.Thread):
                 self.__frames.append(task.audio)
                 if not triggered:
                     num_voiced = len([x for x in watcher if x])
-                    if num_voiced > self.slicer_ratio * watcher.maxlen:
+                    if num_voiced > self.speech_len:
                         # logging.info("start recording...")
                         triggered = True
                         watcher.clear()
                         self.__frames = self.__frames[-self.slicer_maxlen:]
                 else:
                     num_unvoiced = len([x for x in watcher if not x])
-                    if num_unvoiced > self.slicer_ratio * watcher.maxlen:
+                    if num_unvoiced > self.non_speech_len:
                         triggered = False
                         task.audio = self.get_current_frames(task, clear=True)
                         task_head.info.time_diff("slice", "create", store="slice")
