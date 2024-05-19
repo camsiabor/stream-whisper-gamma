@@ -55,19 +55,18 @@ def init_env():
 if __name__ == "__main__":
 
     init_env()
-
     init_logger()
     logger = logging.getLogger('main')
 
     try:
         cfg = load_config()
-        p = pyaudio.PyAudio()
+        py_audio = pyaudio.PyAudio()
         rlistener = rlistener.RListener(
             cfg=cfg,
-            p=p,
+            p=py_audio,
         )
         rlistener.start()
-        rlistener.join()
+        rlistener.gui_mainloop()
     except KeyboardInterrupt:
         logger.info("KeyboardInterrupt: terminating...")
     except Exception as e:

@@ -1,8 +1,10 @@
 import logging
 import threading
+from typing import Optional
 
 from src import rtask
 from src.common import sim
+from src.service.gui.barrage import RGuiRoot
 
 
 class RManifest(threading.Thread):
@@ -18,14 +20,32 @@ class RManifest(threading.Thread):
         self.show_translated = True
         self.show_performance = False
         self.logger = logging.getLogger(name='manifest')
+        self.console = True
+        self.barrage: Optional[RGuiRoot] = None
         self.configure()
 
     def configure(self) -> 'RManifest':
         cfg = self.task_ctrl.cfg.get("manifest", {})
+        self.console = sim.get(cfg, True, "console")
         self.show_transcribe = sim.get(cfg, True, "show_transcribe")
         self.show_translated = sim.get(cfg, True, "show_translated")
         self.show_performance = sim.get(cfg, False, "show_performance")
+
+        cfg_barrage = sim.get(cfg, {}, "barrage")
+        barrage_active = sim.get(cfg_barrage, True, "active")
+        if barrage_active:
+            self.barrage = RGuiRoot(cfg_barrage)
+            self.barrage.init()
+            self.barrage.run()
+
+
         return self
+
+    def manifest_transcribe(self, text_transcribe):
+        if self.console:
+            print(f"[s] {text_transcribe}")
+
+
 
     def run(self):
         self.logger.info("running")

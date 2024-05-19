@@ -12,6 +12,7 @@ from src import rtask
 from src.common import sim
 from src.rrecord import Recorder
 from src.service.gui import barrage
+from src.service.gui.root import RGuiRoot
 
 
 def test_config():
@@ -214,18 +215,20 @@ def test_barrage_2():
     window.mainloop()
 
 
-def test_barrage_add(bar: barrage.RBarrage):
+def test_barrage_add(bar: barrage.RGuiRoot):
     for i in range(3):
         time.sleep(0.5)
         bar.add_barrage(f"Message {i} Power {i}")
 
 
 def test_barrage_3():
-    bar = barrage.RBarrage(cfg=test_config())
+    gui_root = RGuiRoot(cfg=test_config())
     # t = threading.Thread(target=test_barrage_add, args=(bar,))
     # t.start()
 
-    bar.run()
+    gui_root.init()
+    gui_root.run_mainloop()
+
 
     # t.join()
 

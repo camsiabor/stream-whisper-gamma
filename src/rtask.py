@@ -3,6 +3,8 @@ import logging
 import queue
 import time
 
+from src.service.gui.root import RGuiRoot
+
 
 class RBot:
     def __init__(
@@ -126,8 +128,9 @@ class RTaskControl:
     queue_translate = queue.Queue()
     queue_manifest = queue.Queue()
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, gui_root: RGuiRoot):
         self.cfg = cfg
+        self.gui_root = gui_root
         pass
 
     def terminate(self):

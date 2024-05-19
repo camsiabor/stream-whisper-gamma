@@ -4,6 +4,7 @@ import threading
 import pyaudiowpatch as pyaudio
 
 from src import rtask, rrecord, rslice, rtranscribe, rtranslate, rmanifest
+from src.service.gui.root import RGuiRoot
 
 
 class RListener(threading.Thread):
@@ -11,12 +12,13 @@ class RListener(threading.Thread):
             self,
             cfg, p: pyaudio.PyAudio = None):
         super().__init__()
-        self.p = p
-        if self.p is None:
-            self.p = pyaudio.PyAudio()
+        self.py_audio = p
+        if self.py_audio is None:
+            self.py_audio = pyaudio.PyAudio()
         self.cfg = cfg
 
-        self.task_ctrl = rtask.RTaskControl(cfg)
+        self.gui_root = RGuiRoot(cfg)
+        self.task_ctrl = rtask.RTaskControl(cfg, gui_root=self.gui_root)
 
         self.recorder = None
         self.slicer = None
@@ -24,11 +26,13 @@ class RListener(threading.Thread):
         self.translator = None
         self.renderer = None
 
+        self.do_run = True
+
         self.logger = logging.getLogger('listener')
 
     def configure_recorder(self):
         self.recorder = rrecord.Recorder(
-            p_audio=self.p,
+            p_audio=self.py_audio,
             task_ctrl=self.task_ctrl,
         )
 
@@ -59,7 +63,6 @@ class RListener(threading.Thread):
         self.task_ctrl.queue_command.put("exit")
 
     def run(self):
-
         self.logger.info("start")
         try:
             self.configure_recorder()
@@ -74,16 +77,20 @@ class RListener(threading.Thread):
             self.slicer.start()
             self.recorder.start()
 
-            while True:
+            while self.do_run:
                 cmd: rtask.RCommand = self.task_ctrl.queue_command.get()
                 if cmd is None or len(cmd.action) <= 0:
                     continue
-
                 if cmd.action == "exit":
                     self.task_ctrl.terminate()
                     break
 
         except Exception as e:
+            self.do_run = False
             self.logger.error(e, exc_info=True, stack_info=True)
         finally:
             self.logger.info("end")
+
+    def gui_mainloop(self):
+        self.gui_root.init()
+        self.gui_root.run_mainloop()

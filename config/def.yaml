@@ -39,6 +39,9 @@ manifest:
   show_transcribe: true
   show_translated: true
   show_performance: true
+  barrage:
+    active: true
+
 
 
 poe:
