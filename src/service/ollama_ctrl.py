@@ -80,6 +80,8 @@ class OllamaCtrl:
         else:
             prompt = langutil.translate_prompt(text, src_name, des_name)
 
+        result = await self.agent.generate(model=bot.id, prompt=prompt)
+        """
         message = {
             'role': 'user',
             'content': prompt,
@@ -89,6 +91,8 @@ class OllamaCtrl:
             messages=[message],
         )
         """
+
+        """
         async for part in await self.agent_ollama.chat(
                 model=model,
                 messages=[message],
@@ -96,4 +100,5 @@ class OllamaCtrl:
         ):
             result += part['message'].get('content', '')
         """
-        return sim.get(result, '', 'message', 'content')
+        # return sim.get(result, '', 'message', 'content')
+        return sim.get(result, '', 'response')
