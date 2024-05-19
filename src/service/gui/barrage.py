@@ -33,11 +33,8 @@ class RBarrageUnit:
         if text is None:
             text = ''
 
-        screen_h = self.root.screen_h
 
-        font = self.root.font
-        text_w = font.measure(self.text)
-        text_h_per = font.metrics("linespace")
+
         # me_h = screen_h - text_h_per
 
         self.me = tk.Toplevel(self.root.main)
@@ -47,21 +44,27 @@ class RBarrageUnit:
         self.me.overrideredirect(True)  # Remove window decorations (title bar, borders, etc.)
         # self.me.geometry(f"+{0}+{0}")
 
+        font = self.root.font
         label = tk.Label(self.me, text=text, fg="orange", font=font)
         # label.pack(fill=tk.BOTH, expand=True)
         label.pack(fill=tk.BOTH, expand=True, )
 
+        lines = text.splitlines()
+        num_lines = len(lines)
+
+        screen_h = self.root.screen_h
+        text_w = font.measure(self.text)
+        text_h_per = font.metrics("linespace")
+        text_h = text_h_per * num_lines
+
         self.x = 10
-        self.y = screen_h - text_h_per - 10
+        self.y = screen_h - text_h - 10
         self.width = text_w
-        self.height = text_h_per + 1
+        self.height = text_h
 
         # Set window size and position
         # self.me.geometry(f"{self.width}x{self.height}+{self.x}+{self.y}")
         self.me.geometry(f"+{self.x}+{self.y}")
-
-        label_w = label.winfo_width()
-        label_h = label.winfo_height()
 
     def destroy(self):
         if self.me is not None:
