@@ -71,7 +71,7 @@ class RTranscriber(threading.Thread):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass
 
-    def __call__(self, task: rtask.RTask) -> typing.Generator[str, None, None]:
+    def process(self, task: rtask.RTask) -> typing.Generator[str, None, None]:
 
         data = task.audio
 
@@ -101,7 +101,7 @@ class RTranscriber(threading.Thread):
                 yield t
 
     def run(self):
-        self.logger.info("running")
+        self.logger.info(f"running | source lang: {self.lang_src}")
         error_count = 0
         while self.do_run:
             try:
@@ -111,7 +111,7 @@ class RTranscriber(threading.Thread):
 
                 # text = codefast.fp.cyan('')
                 text = ''
-                for seg in self(task):
+                for seg in self.process(task):
                     text += seg
                     # text += codefast.fp.cyan(seg)
 

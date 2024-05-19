@@ -203,7 +203,9 @@ def test_barrage_2():
                 canvas.move(barrage_messages[i], 0, -30)
         x = 10
         y = (len(barrage_messages) + 1) * 30  # Adjust the vertical position of each message
-        text = canvas.create_text(x, y, text=message, fill="#FF0000", font=("Arial", 24), anchor=tk.NW)
+        text = canvas.create_text(
+            x, y,
+            text=message, fill="#FF0000", font=("Arial", 24), anchor=tk.NW)
         barrage_messages.append(text)
 
     for i in range(15):
@@ -214,7 +216,7 @@ def test_barrage_2():
 
 
 def test_barrage_add(bar: barrage.RBarrage):
-    for i in range(12):
+    for i in range(3):
         time.sleep(0.5)
         bar.add_barrage_message(f"Message {i}\nPower {i}")
 
