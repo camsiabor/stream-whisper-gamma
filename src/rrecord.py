@@ -103,6 +103,7 @@ class Recorder(threading.Thread):
         except OSError:
             raise WASAPINotFound("Looks like WASAPI is not available on the system")
 
+
         # Get default WASAPI speakers
         sys_default_speakers = self.p.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
 
@@ -150,6 +151,8 @@ class Recorder(threading.Thread):
         device_index = self.device["index"]
         device_channels = self.get_sample_channels()
         sample_rate = self.get_sample_rate()
+
+        # self.p.print_detailed_system_info()
 
         self.logger.info(f"init | device: {self.device}")
 

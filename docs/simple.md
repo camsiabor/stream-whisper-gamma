@@ -33,4 +33,10 @@ https://huggingface.co/SakuraLLM
 
 https://huggingface.co/kagevazquez/Liberated-Qwen1.5-14B-GGUF
 
+# speech++
 
+https://blog.csdn.net/yegeli/article/details/130538523
+
+# librosa
+
+https://blog.csdn.net/yegeli/article/details/130725503
