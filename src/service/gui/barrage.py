@@ -10,15 +10,63 @@ class RBarrageUnit:
     def __init__(
             self,
             root: 'RBarrage',
-            text: str
+            text: str = '',
     ):
         self.text = text
+        self.me = None
         self.root = root
         self.label = None
 
+        self.x = 10
+        self.y = 0
+        self.width = 0
+        self.height = 0
+
+    def init(self, text):
+
+        if self.me is not None:
+            logging.warning("Barrage window already exists")
+            return
+
+        if text is None:
+            text = self.text
+        if text is None:
+            text = ''
+
+        screen_h = self.root.screen_h
+
+        font = self.root.font
+        text_w = font.measure(self.text)
+        text_h_per = font.metrics("linespace")
+        # me_h = screen_h - text_h_per
+
+        self.me = tk.Toplevel(self.root.main)
+        self.me.attributes("-topmost", True)  # Set the window to be always on top
+        self.me.attributes("-transparentcolor", "#F0F0F0")
+        self.me.attributes("-toolwindow", True)
+        self.me.overrideredirect(True)  # Remove window decorations (title bar, borders, etc.)
+        # self.me.geometry(f"+{0}+{0}")
+
+        label = tk.Label(self.me, text=text, fg="orange", font=font)
+        # label.pack(fill=tk.BOTH, expand=True)
+        label.pack(fill=tk.BOTH, expand=True, )
+
+        self.x = 10
+        self.y = screen_h - text_h_per - 10
+        self.width = text_w
+        self.height = text_h_per + 1
+
+        # Set window size and position
+        # self.me.geometry(f"{self.width}x{self.height}+{self.x}+{self.y}")
+        self.me.geometry(f"+{self.x}+{self.y}")
+
+        label_w = label.winfo_width()
+        label_h = label.winfo_height()
+
     def destroy(self):
-        if self.label is not None:
-            self.label.destroy()
+        if self.me is not None:
+            self.me.destroy()
+            self.me = None
 
 
 class RBarrage:
@@ -35,6 +83,9 @@ class RBarrage:
 
         self.lock = threading.Lock()
 
+        self.screen_h = 0
+        self.screen_w = 0
+
         self.configure()
         self.init()
 
@@ -48,11 +99,10 @@ class RBarrage:
         font_size = font_cfg.get("size", 16)
         self.font = Font(family=font_name, size=font_size)
 
+        self.screen_w = self.main.winfo_screenwidth()
+        self.screen_h = self.main.winfo_screenheight()
 
-        screen_w = self.main.winfo_screenwidth()
-        screen_h = self.main.winfo_screenheight()
-
-        self.main.geometry(f"{screen_w}x{screen_h}+{0}+{0}")  # Set window size and position
+        self.main.geometry(f"{self.screen_w}x{self.screen_h}+{0}+{0}")  # Set window size and position
 
         self.main.attributes("-topmost", True)  # Set the window to be always on top
         self.main.attributes("-transparentcolor", "#F0F0F0")
@@ -64,7 +114,7 @@ class RBarrage:
     def init(self):
         button_test = tk.Button(
             self.main,
-            text="Test",
+            text="TEST_ADD)",
             bg="black", fg="white",
             command=self.click_test,
         )
@@ -72,21 +122,33 @@ class RBarrage:
 
         button_clear = tk.Button(
             self.main,
-            text="Clear Barrages",
+            text="TEST_CLEAR",
             bg="black", fg="white",
             command=self.click_clear
         )
         button_clear.pack(side="right", padx=10, pady=10)
 
     def click_test(self):
-        self.add_barrage_message("New Barrage Message")
+        count = len(self.barrages)
+        self.add_barrage(f"New Barrage Message | {count}")
 
     def click_clear(self):
         try:
             self.lock.acquire()
-            for barrage in self.barrages:
-                barrage.destroy()
+            print("clearing")
+            for unit in self.barrages:
+                self.main.after(0, unit.destroy)
             self.barrages.clear()
+        finally:
+            self.lock.release()
+
+    def add_barrage(self, text: str):
+        try:
+            self.lock.acquire()
+            print("adding")
+            unit = RBarrageUnit(self, text)
+            self.main.after(0, unit.init, text)
+            self.barrages.append(unit)
         finally:
             self.lock.release()
 

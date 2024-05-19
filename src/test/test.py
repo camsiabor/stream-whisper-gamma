@@ -218,7 +218,7 @@ def test_barrage_2():
 def test_barrage_add(bar: barrage.RBarrage):
     for i in range(3):
         time.sleep(0.5)
-        bar.add_barrage_message(f"Message {i}\nPower {i}")
+        bar.add_barrage(f"Message {i} Power {i}")
 
 
 def test_barrage_3():
@@ -227,7 +227,8 @@ def test_barrage_3():
     t.start()
 
     bar.run()
-    t.join()
+
+    # t.join()
 
 
 
