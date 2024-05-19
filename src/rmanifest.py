@@ -69,7 +69,7 @@ class RManifest(threading.Thread):
                     diff_transcribe = task.info.time_elapsed_get("transcribe")
                     diff_translate = task.info.time_elapsed_get("translate")
                     diff_manifest = task.info.time_elapsed_get("manifest")
-                    diff_all = diff_slice + diff_transcribe + diff_transcribe + diff_manifest
+                    diff_all = diff_slice + diff_transcribe + diff_translate + diff_manifest
 
                     pending_slice = self.task_ctrl.queue_slice.qsize()
                     pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
