@@ -1,5 +1,4 @@
 import datetime
-import threading
 import time
 import tkinter as tk
 
@@ -223,8 +222,8 @@ def test_barrage_add(bar: barrage.RBarrage):
 
 def test_barrage_3():
     bar = barrage.RBarrage(cfg=test_config())
-    t = threading.Thread(target=test_barrage_add, args=(bar,))
-    t.start()
+    # t = threading.Thread(target=test_barrage_add, args=(bar,))
+    # t.start()
 
     bar.run()
 

@@ -22,20 +22,16 @@ class RBarrageUnit:
         self.width = 0
         self.height = 0
 
-    def init(self, text):
+    def init(self, text) -> 'RBarrageUnit':
 
         if self.me is not None:
             logging.warning("Barrage window already exists")
-            return
+            return self
 
         if text is None:
             text = self.text
         if text is None:
             text = ''
-
-
-
-        # me_h = screen_h - text_h_per
 
         self.me = tk.Toplevel(self.root.main)
         self.me.attributes("-topmost", True)  # Set the window to be always on top
@@ -45,9 +41,16 @@ class RBarrageUnit:
         # self.me.geometry(f"+{0}+{0}")
 
         font = self.root.font
-        label = tk.Label(self.me, text=text, fg="orange", font=font)
-        # label.pack(fill=tk.BOTH, expand=True)
-        label.pack(fill=tk.BOTH, expand=True, )
+        self.label = tk.Label(
+            self.me,
+            text=text,
+            fg=self.root.font_color,
+
+            font=font
+        )
+        if self.root.font_background is not None and len(self.root.font_background) > 0:
+            self.label.configure(bg=self.root.font_background)
+        self.label.pack(fill=tk.BOTH, expand=True, )
 
         lines = text.splitlines()
         num_lines = len(lines)
@@ -57,14 +60,20 @@ class RBarrageUnit:
         text_h_per = font.metrics("linespace")
         text_h = text_h_per * num_lines
 
-        self.x = 10
-        self.y = screen_h - text_h - 10
+        self.x = 0
+        self.y = screen_h - text_h
         self.width = text_w
         self.height = text_h
 
-        # Set window size and position
-        # self.me.geometry(f"{self.width}x{self.height}+{self.x}+{self.y}")
+        return self
+
+    def move(self, x: int, y: int, height_offset: int = None) -> 'RBarrageUnit':
+        if height_offset is None:
+            height_offset = self.height
+        self.x = x
+        self.y = y - height_offset
         self.me.geometry(f"+{self.x}+{self.y}")
+        return self
 
     def destroy(self):
         if self.me is not None:
@@ -83,6 +92,10 @@ class RBarrage:
         self.barrages = deque(maxlen=self.barrage_max)
 
         self.font = Font(family="Consolas", size=16)
+        self.font_color = "#FFA500"
+        self.font_background = "#000000"
+
+        self.margin = {'x': 10, 'y': 10}
 
         self.lock = threading.Lock()
 
@@ -101,6 +114,14 @@ class RBarrage:
         font_name = font_cfg.get("family", "Consolas")
         font_size = font_cfg.get("size", 16)
         self.font = Font(family=font_name, size=font_size)
+        self.font_color = cfg.get("font_color", "#FFA500")
+        self.font_background = cfg.get("font_background", "#000000")
+
+        margin_cfg = cfg.get("margin", {})
+        self.margin = {
+            'x': margin_cfg.get("x", 10),
+            'y': margin_cfg.get("y", 10)
+        }
 
         self.screen_w = self.main.winfo_screenwidth()
         self.screen_h = self.main.winfo_screenheight()
@@ -150,44 +171,19 @@ class RBarrage:
             self.lock.acquire()
             print("adding")
             unit = RBarrageUnit(self, text)
+
+            prev = self.barrages[-1] if len(self.barrages) > 0 else None
+            if prev is not None:
+                target_y = prev.y
+                target_x = prev.x
+            else:
+                target_y = self.screen_h - self.margin.get('y', 10)
+                target_x = self.margin.get('x', 10)
+
             self.main.after(0, unit.init, text)
+            self.main.after(0, unit.move, target_x, target_y)
+
             self.barrages.append(unit)
-        finally:
-            self.lock.release()
-
-    # Function to add a new barrage message
-    def add_barrage_message(self, text):
-        try:
-            self.lock.acquire()
-
-            label_font = Font(family="Consolas", size=16)
-            text_width = label_font.measure(text)
-            text_height = label_font.metrics("linespace")
-
-            if len(self.barrages) >= self.barrage_max:
-                # Remove the oldest window if the limit is reached
-                oldest_barrage = self.barrages.popleft()
-                oldest_barrage.destroy()
-
-                # Move existing windows up by 30 pixels
-                for barrage in self.barrages:
-                    x, y = barrage.winfo_x(), barrage.winfo_y() - 30
-                    barrage.geometry(f"+{x}+{y}")
-
-            x = 10
-            # Adjust the vertical position of the new window
-            y = self.main.winfo_screenheight() - (len(self.barrages) + 1) * 30
-            sub = tk.Toplevel(self.main)
-            sub.attributes("-topmost", True)  # Set the window to be always on top
-            sub.attributes("-transparentcolor", "#F0F0F0")
-            sub.attributes("-toolwindow", True)
-            sub.overrideredirect(True)  # Remove window decorations (title bar, borders, etc.)
-            sub.geometry(f"+{x}+{y}")  # Set window size and position
-
-            label_font = tk.font.Font(family="Arial", size=20)
-            label = tk.Label(sub, text=text, fg="orange", font=label_font)
-            label.pack(fill=tk.BOTH, expand=True, )
-            self.barrages.append(sub)
         finally:
             self.lock.release()
 
