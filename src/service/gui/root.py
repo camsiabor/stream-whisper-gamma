@@ -95,12 +95,13 @@ class RGuiRoot:
             )
 
             prev = self.barrages[-1] if len(self.barrages) > 0 else None
-            if prev is not None:
-                target_y = prev.y
-                target_x = 0
+            if prev is None:
+                target_y = self.screen_h - unit.offset.get('y', 10)
+                target_x = unit.offset.get('x', 10)
             else:
-                target_y = self.screen_h
-                target_x = 0
+                target_y = prev.y
+                target_x = unit.offset.get('x', 10)
+
 
             self.main.after(0, unit.init, text)
             self.main.after(0, unit.move, target_x, target_y)

@@ -98,8 +98,8 @@ class RBarrage:
     def move(self, x: int, y: int, height_offset: int = None) -> 'RBarrage':
         if height_offset is None:
             height_offset = self.height
-        self.x = x + self.margin['x'] + self.offset['x']
-        self.y = y - height_offset - self.margin['y'] - self.offset['y']
+        self.x = x + self.margin['x']
+        self.y = y - height_offset - self.margin['y']
         self.me.geometry(f"+{self.x}+{self.y}")
         return self
 
