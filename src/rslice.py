@@ -142,7 +142,7 @@ class RSlice(threading.Thread):
                         # logging.info("start recording...")
                         triggered = True
                         watcher.clear()
-                        self.__frames = self.__frames[-self.slicer_maxlen:]
+                        self.__frames = self.__frames[-self.buffer_len:]
                 else:
                     num_unvoiced = len([x for x in watcher if not x])
                     if num_unvoiced > self.non_speech_len:
