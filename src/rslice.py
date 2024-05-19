@@ -103,6 +103,9 @@ class RSlice(threading.Thread):
 
         task_head = None
 
+        speech_count = 0
+        non_speech_count = 0
+
 
         while self.do_run:
             try:
@@ -134,18 +137,25 @@ class RSlice(threading.Thread):
                     self.logger.error(f"vad.is_speech() failed - speech len {len(task.audio)}- {ex}")
                     self.logger.error(ex, exc_info=True, stack_info=True)
 
-                watcher.append(is_speech)
+                # watcher.append(is_speech)
+
+                if is_speech:
+                    speech_count += 1
+                else:
+                    non_speech_count += 1
+
                 self.__frames.append(task.audio)
                 if not triggered:
-                    num_voiced = len([x for x in watcher if x])
-                    if num_voiced > self.speech_len:
-                        # logging.info("start recording...")
+                    # num_voiced = len([x for x in watcher if x])
+                    if speech_count >= self.speech_len:
                         triggered = True
-                        watcher.clear()
+                        # watcher.clear()
+                        speech_count = 0
+                        non_speech_count = 0
                         self.__frames = self.__frames[-self.buffer_len:]
                 else:
-                    num_unvoiced = len([x for x in watcher if not x])
-                    if num_unvoiced > self.non_speech_len:
+                    # num_unvoiced = len([x for x in watcher if not x])
+                    if non_speech_count >= self.non_speech_len:
                         triggered = False
                         task.audio = self.get_current_frames(task, clear=True)
                         task_head.info.time_diff("slice", "create", store="slice")
