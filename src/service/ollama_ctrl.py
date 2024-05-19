@@ -80,7 +80,12 @@ class OllamaCtrl:
         else:
             prompt = langutil.translate_prompt(text, src_name, des_name)
 
-        result = await self.agent.generate(model=bot.id, prompt=prompt)
+        system_prompt = langutil.translate_system_prompt()
+        result = await self.agent.generate(
+            model=bot.id,
+            prompt=prompt,
+            system=system_prompt,
+        )
         """
         message = {
             'role': 'user',
