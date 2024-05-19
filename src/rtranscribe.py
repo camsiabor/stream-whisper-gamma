@@ -10,6 +10,8 @@ from src import rtask
 from src.common import sim
 
 
+# import cutlet
+
 class RTranscriber(threading.Thread):
     lang_src: str
     beam_size: int
@@ -28,6 +30,9 @@ class RTranscriber(threading.Thread):
         self.task_ctrl = task_ctrl
         self.do_run = True
         self._model = None
+
+        # self.katsu = cutlet.Cutlet()
+
         self.logger = logging.getLogger('transcriber')
         self.configure()
 

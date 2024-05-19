@@ -97,13 +97,11 @@ class RManifest(threading.Thread):
 
                 task.text_transcribe = sim.insert_newline_per(
                     text=task.text_transcribe.strip(),
-                    splitter="" if lang_src_east_asian else " ",
                     max_len=16 if lang_src_east_asian else 10,
                 )
 
                 task.text_translate = sim.insert_newline_per(
                     text=task.text_translate.strip(),
-                    splitter="" if lang_des_east_asian else " ",
                     max_len=16 if lang_des_east_asian else 10,
                 )
 
