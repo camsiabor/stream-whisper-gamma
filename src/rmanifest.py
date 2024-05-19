@@ -33,9 +33,48 @@ class RManifest(threading.Thread):
 
         return self
 
-    def manifest_transcribe(self, text_transcribe):
+    def manifest_transcribe(self, task):
+
         if self.console:
-            print(f"[s] {text_transcribe}")
+            print(f"[s] {task.text_transcribe}")
+
+        if self.barrage:
+            self.task_ctrl.gui_root.add_barrage(
+                text=task.text_transcribe,
+                font_color="#FFFFFF",
+            )
+
+    def manifest_translate(self, task):
+        if self.console:
+            print(f"[d] {task.text_translate}")
+
+        if self.barrage:
+            self.task_ctrl.gui_root.add_barrage(
+                text=task.text_translate
+            )
+
+    def manifest_performance(self, task):
+        task.info.time_set("manifest")
+        # task.info.time_set_as_str("manifest_str")
+        task.info.time_diff("translate", "manifest", store="manifest")
+        task.info.time_diff(head="create", tail="manifest", store="all")
+
+        diff_slice = task.info.time_elapsed_get("slice")
+        diff_transcribe = task.info.time_elapsed_get("transcribe")
+        diff_translate = task.info.time_elapsed_get("translate")
+        diff_manifest = task.info.time_elapsed_get("manifest")
+        diff_all = diff_slice + diff_transcribe + diff_translate + diff_manifest
+
+        pending_slice = self.task_ctrl.queue_slice.qsize()
+        pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
+        perf = f"duration: {task.text_info.duration} | " \
+               f"all: {diff_all} | slice: {diff_slice} | transcribe: {diff_transcribe} | " \
+               f"translate: {diff_translate} | manifest: {diff_manifest} | " \
+               f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
+
+        if self.console:
+            print(perf)
+
 
     def run(self):
         self.logger.info("running")
@@ -54,44 +93,20 @@ class RManifest(threading.Thread):
 
                 task.text_transcribe = task.text_transcribe.strip()
 
-                text_target = sim.text_with_return(
+                task.text_translate = text_target = sim.text_with_return(
                     text=task.text_translate.strip(),
                     splitter="" if task.param.lang_des == "zh" else " ",
                     max_len=10,
                 )
 
-                # print("[s] %s" % task.text_transcribe.encode('utf-8'))
-                # print("[d] %s" % text_target.encode('utf-8'))
-
                 if self.show_transcribe:
-                    print(f"[s] {task.text_transcribe}")
+                    self.manifest_transcribe(task)
 
                 if self.show_translated:
-                    print(f"[d] {text_target}")
-
-                if self.barrage:
-                    self.task_ctrl.gui_root.add_barrage(text_target)
-
-                task.info.time_set("manifest")
-                # task.info.time_set_as_str("manifest_str")
-                task.info.time_diff("translate", "manifest", store="manifest")
-                task.info.time_diff(head="create", tail="manifest", store="all")
+                    self.manifest_translate(task)
 
                 if self.show_performance:
-                    diff_slice = task.info.time_elapsed_get("slice")
-                    diff_transcribe = task.info.time_elapsed_get("transcribe")
-                    diff_translate = task.info.time_elapsed_get("translate")
-                    diff_manifest = task.info.time_elapsed_get("manifest")
-                    diff_all = diff_slice + diff_transcribe + diff_translate + diff_manifest
-
-                    pending_slice = self.task_ctrl.queue_slice.qsize()
-                    pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
-                    print(
-                        f"duration: {task.text_info.duration} | "
-                        f"all: {diff_all} | slice: {diff_slice} | transcribe: {diff_transcribe} | "
-                        f"translate: {diff_translate} | manifest: {diff_manifest} | "
-                        f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
-                        "--- ")
+                    self.manifest_performance(task)
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

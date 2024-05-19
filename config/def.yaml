@@ -36,6 +36,8 @@ translator:
 
 
 manifest:
+  console: true
+  barrage: true
   show_transcribe: true
   show_translated: true
   show_performance: true
@@ -43,14 +45,18 @@ manifest:
 gui:
   active: true
   barrage:
+    max: 22
     font:
       family: "Consolas"
-      size: 12
+      size: 15
       color: "#FFA500"
       background: "#000000"
     margin:
+      x: 0
+      y: 3
+    offset:
       x: 10
-      y: 0
+      y: 30
 
 
 
@@ -64,7 +70,7 @@ poe:
     lat: ""
   translate:
     all:
-      id: "-"
+      id: ""
       prompt_type: ""
 
 

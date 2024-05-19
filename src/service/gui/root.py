@@ -2,6 +2,7 @@ import logging
 import threading
 import tkinter as tk
 from collections import deque
+from tkinter.font import Font
 
 from src.common import sim
 from src.service.gui.barrage import RBarrage
@@ -34,7 +35,7 @@ class RGuiRoot:
         return self
 
     def configure_barrage(self, cfg_barrage):
-        self.barrage_max = cfg_barrage.get("barrage_max", 10)
+        self.barrage_max = cfg_barrage.get("max", 10)
         self.barrages = deque(maxlen=self.barrage_max)
 
     def init(self):
@@ -81,7 +82,17 @@ class RGuiRoot:
         finally:
             self.lock.release()
 
-    def add_barrage(self, text: str):
+    def add_barrage(
+            self,
+            text: str,
+            font: Font = None,
+            font_color: str = '',
+            font_background: str = '',
+    ):
+
+        if text is None or len(text) <= 0:
+            return
+
         cfg_barrage = sim.get(self.cfg, {}, "gui", "barrage")
         self.logger.debug(f"adding barrage: {text}")
 
@@ -90,6 +101,15 @@ class RGuiRoot:
             text=text,
             cfg=cfg_barrage
         )
+
+        if font is not None:
+            nova.font = font
+
+        if font_color is not None and len(font_color) > 0:
+            nova.font_color = font_color
+
+        if font_background is not None and len(font_background) > 0:
+            nova.font_background = font_background
 
         try:
             self.lock.acquire()
