@@ -18,7 +18,7 @@ class RBarrage:
         self.me = None
         self.label = None
 
-        self.x = 10
+        self.x = 0
         self.y = 0
         self.width = 0
         self.height = 0
@@ -26,7 +26,7 @@ class RBarrage:
         self.font = Font(family="Consolas", size=16)
         self.font_color = "#FFA500"
         self.font_background = "#000000"
-        self.margin = {'x': 0, 'y': 0}
+        self.margin = {'x': 0, 'y': 3}
         self.offset = {'x': 10, 'y': 30}
 
         self.configure(self.cfg)
@@ -44,7 +44,7 @@ class RBarrage:
         margin_cfg = cfg.get("margin", {})
         self.margin = {
             'x': margin_cfg.get("x", 0),
-            'y': margin_cfg.get("y", 0)
+            'y': margin_cfg.get("y", 3)
         }
         offset_cfg = cfg.get("offset", {})
         self.offset = {
@@ -53,7 +53,7 @@ class RBarrage:
         }
         return self
 
-    def init(self, text) -> 'RBarrage':
+    def init(self, text: str = None) -> 'RBarrage':
 
         if self.me is not None:
             logging.warning("Barrage window already exists")
@@ -88,10 +88,8 @@ class RBarrage:
         text_h_per = self.font.metrics("linespace")
         text_h = text_h_per * num_lines
 
-        self.x = 0
-        self.y = 0
-        self.width = text_w
-        self.height = text_h
+        self.width = text_w + self.margin.get('x', 0)
+        self.height = text_h + self.margin.get('y', 0)
 
         return self
 

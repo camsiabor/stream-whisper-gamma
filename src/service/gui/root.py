@@ -37,14 +37,13 @@ class RGuiRoot:
         self.barrage_max = cfg_barrage.get("barrage_max", 10)
         self.barrages = deque(maxlen=self.barrage_max)
 
-
-
     def init(self):
 
         self.screen_w = self.main.winfo_screenwidth()
         self.screen_h = self.main.winfo_screenheight()
 
-        self.main.geometry(f"{self.screen_w}x{self.screen_h}+{0}+{0}")  # Set window size and position
+        # Set window size and position
+        self.main.geometry(f"{self.screen_w}x{self.screen_h}+{0}+{0}")
 
         self.main.attributes("-topmost", True)  # Set the window to be always on top
         self.main.attributes("-transparentcolor", "#F0F0F0")
@@ -84,31 +83,53 @@ class RGuiRoot:
 
     def add_barrage(self, text: str):
         cfg_barrage = sim.get(self.cfg, {}, "gui", "barrage")
+        self.logger.debug(f"adding barrage: {text}")
+
+        nova = RBarrage(
+            root=self,
+            text=text,
+            cfg=cfg_barrage
+        )
+
         try:
             self.lock.acquire()
-            self.logger.debug(f"adding barrage: {text}")
 
-            unit = RBarrage(
-                root=self,
-                text=text,
-                cfg=cfg_barrage
-            )
+            barrage_count = len(self.barrages)
 
-            prev = self.barrages[-1] if len(self.barrages) > 0 else None
-            if prev is None:
-                target_y = self.screen_h - unit.offset.get('y', 10)
-                target_x = unit.offset.get('x', 10)
-            else:
-                target_y = prev.y
-                target_x = unit.offset.get('x', 10)
+            legacy = None
+            if barrage_count >= self.barrage_max:
+                legacy = self.barrages.popleft()
+                self.main.after(0, legacy.destroy)
 
+            nova.x = nova.offset.get('x', 10)
+            nova.y = self.screen_h - nova.offset.get('y', 10)
 
-            self.main.after(0, unit.init, text)
-            self.main.after(0, unit.move, target_x, target_y)
-
-            self.barrages.append(unit)
+            self.main.after(0, self.update_barrage, nova, legacy)
         finally:
             self.lock.release()
+
+    def update_barrage(self, nova: RBarrage, legacy: RBarrage):
+        try:
+            if legacy is not None:
+                legacy.destroy()
+
+            nova.init()
+            nova.move(nova.x, nova.y)
+
+            # print(f"barrages len: {len(self.barrages)}")
+            # print(f"nova.x: {nova.x}, nova.y: {nova.y}, nova.height: {nova.height}")
+            # print("---------------------------")
+
+            for i in range(len(self.barrages) - 1, -1, -1):
+                unit = self.barrages[i]
+                # print(f"[{i}] A unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
+                unit.move(unit.x, unit.y + unit.height - nova.height)
+                # print(f"[{i}] Z unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
+                # print("---------------------------")
+
+            self.barrages.append(nova)
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True, stack_info=True)
 
     def run_mainloop(self):
         self.main.mainloop()
