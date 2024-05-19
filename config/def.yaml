@@ -8,7 +8,7 @@ slicer:
   speech_len: 10
   non_speech_len: 1
   denoise_ratio_of_fragment: 0
-  denoise_ratio_of_speech: 0
+  denoise_ratio_of_speech: 0.9
   slice_mode: vad
 
 transcriber:
@@ -18,7 +18,7 @@ transcriber:
   # model_size: "arc-r/faster-whisper-large-v2-mix-jp"
   local_files_only: false
   device: "cuda"
-  lang_src: "ja"
+  lang_src: "japanese"
   beam_size: 10
   prompt: "翻訳する"
 
@@ -32,15 +32,28 @@ translator:
   agent_poe:
     active: false
   agent_ollama:
-    active: true
+    active: false
 
 
 manifest:
   show_transcribe: true
   show_translated: true
   show_performance: true
+
+gui:
+  active: true
   barrage:
-    active: true
+    font:
+      family: "Consolas"
+      size: 12
+      color: "#FFA500"
+      background: "#000000"
+    margin:
+      x: 10
+      y: 0
+
+
+
 
 
 
@@ -51,7 +64,7 @@ poe:
     lat: ""
   translate:
     all:
-      id: ""
+      id: "-"
       prompt_type: ""
 
 

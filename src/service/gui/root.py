@@ -97,7 +97,7 @@ class RGuiRoot:
             prev = self.barrages[-1] if len(self.barrages) > 0 else None
             if prev is not None:
                 target_y = prev.y
-                target_x = prev.x
+                target_x = 0
             else:
                 target_y = self.screen_h
                 target_x = 0
