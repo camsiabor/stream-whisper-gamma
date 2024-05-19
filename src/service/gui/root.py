@@ -10,7 +10,7 @@ from src.service.gui.barrage import RBarrage
 class RGuiRoot:
 
     def __init__(self, cfg: dict):
-        self.logger = logging.getLogger('barrage')
+        self.logger = logging.getLogger('gui_root')
 
         self.cfg = cfg
         self.main = tk.Tk()
@@ -75,7 +75,7 @@ class RGuiRoot:
     def click_clear(self):
         try:
             self.lock.acquire()
-            print("clearing")
+            self.logger.debug("clearing barrages")
             for unit in self.barrages:
                 self.main.after(0, unit.destroy)
             self.barrages.clear()
@@ -86,7 +86,7 @@ class RGuiRoot:
         cfg_barrage = sim.get(self.cfg, {}, "gui", "barrage")
         try:
             self.lock.acquire()
-            print("adding")
+            self.logger.debug(f"adding barrage: {text}")
 
             unit = RBarrage(
                 root=self,
