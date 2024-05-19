@@ -98,7 +98,7 @@ class RSlice(threading.Thread):
         watcher = collections.deque(maxlen=self.slicer_maxlen)
         triggered = False
 
-        task_begin = None
+        task_head = None
 
         while self.do_run:
             try:
@@ -106,9 +106,9 @@ class RSlice(threading.Thread):
                 if task is None:
                     break
 
-                if task_begin is None:
+                if task_head is None:
                     task.info.time_set("slice")
-                    task_begin = task
+                    task_head = task
 
                 if self.denoise_ratio > 0:
                     try:
@@ -144,9 +144,10 @@ class RSlice(threading.Thread):
                     if num_unvoiced > self.slicer_ratio * watcher.maxlen:
                         triggered = False
                         task.audio = self.get_current_frames(task, clear=True)
-                        task.info = task_begin.info
+                        task_head.info.time_diff("slice", "create", store="slice")
+                        task.info = task_head.info
                         self.task_ctrl.queue_transcribe.put(task)
-                        task_begin = None
+                        task_head = None
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

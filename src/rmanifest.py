@@ -46,15 +46,23 @@ class RManifest(threading.Thread):
                 print(f"[s] {task.text_transcribe}")
                 print(f"[d] {text_target}")
                 task.info.time_set("manifest")
-                task.info.time_set_as_str("manifest_str")
-                time_diff = task.info.time_diff(head="create", tail="manifest")
+                # task.info.time_set_as_str("manifest_str")
+                task.info.time_diff("translate", "manifest", store="manifest")
+                task.info.time_diff(head="create", tail="manifest", store="all")
+
+                diff_slice = task.info.time_elapsed_get("slice")
+                diff_transcribe = task.info.time_elapsed_get("transcribe")
+                diff_translate = task.info.time_elapsed_get("translate")
+                diff_manifest = task.info.time_elapsed_get("manifest")
+                diff_all = diff_slice + diff_transcribe + diff_transcribe + diff_manifest
+
                 pending_slice = self.task_ctrl.queue_slice.qsize()
                 pending_transcribe = self.task_ctrl.queue_transcribe.qsize()
                 print(
                     f"duration: {task.text_info.duration} | "
-                    f"consume: {time_diff} | "
-                    f"slice: {pending_slice} | transcribe: {pending_transcribe} | "
-                    f"{task.info.time_get('create_str')} -> {task.info.time_get('manifest_str')} | "
+                    f"all: {diff_all} | slice: {diff_slice} | transcribe: {diff_transcribe} | "
+                    f"translate: {diff_translate} | manifest: {diff_manifest} | "
+                    f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
                     "--- ")
 
             except Exception as ex:

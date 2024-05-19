@@ -108,7 +108,7 @@ class RTranscriber(threading.Thread):
                 task: rtask.RTask = self.task_ctrl.queue_transcribe.get()
                 if task.audio is None:
                     continue
-                task.info.time_set("transcribe")
+
                 # text = codefast.fp.cyan('')
                 text = ''
                 for seg in self(task):
@@ -124,6 +124,8 @@ class RTranscriber(threading.Thread):
                     continue
 
                 task.text_transcribe = text
+                task.info.time_set("transcribe")
+                task.info.time_diff("slice", "transcribe", store="transcribe")
                 self.task_ctrl.queue_translate.put(task)
             except Exception:
                 traceback.print_exc()

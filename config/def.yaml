@@ -1,20 +1,24 @@
 recorder:
-  chunk_size: 512
+  chunk_size: 65536
   frame_duration: 10
+  flush_interval: 0
 
 slicer:
-  slicer_maxlen: 30
+  slicer_maxlen: 11
   slicer_ratio: 0.5
+  denoise_ratio: 0
+  slice_mode: vad
 
 transcriber:
   # model_size: "Systran/faster-whisper-large-v3"
-  # model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
-  model_size: "JhonVanced/whisper-large-v3-japanese-4k-steps-ct2"
-  local_files_only: true
+  model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
+  # model_size: "JhonVanced/whisper-large-v3-japanese-4k-steps-ct2"
+  # model_size: "arc-r/faster-whisper-large-v2-mix-jp"
+  local_files_only: false
   device: "cuda"
   lang_src: "ja"
-  beam_size: 25
-  prompt: "こんにちは"
+  beam_size: 10
+  prompt: "翻訳する"
 
 
 translator:
@@ -36,11 +40,11 @@ renderer:
 poe:
   active: true
   token:
-    b: ""
-    lat: ""
+    b: "-"
+    lat: "-"
   translate:
     all:
-      id: "trans_BotIRT5PFUVID"
+      id: "-"
       prompt_type: ""
 
 
@@ -50,6 +54,12 @@ ollama:
   translate:
     all:
       id: "L3-lexi-8b-q6"
+      # id: "L3-dolphin-8b-q6"
+      # id: "lq-14b"
+      # id: "sakura-13b"
       prompt_type: ""
+
+      # prompt_type: ""
+      # prompt_type: "none"
 
 

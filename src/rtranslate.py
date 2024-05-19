@@ -114,7 +114,7 @@ class RTranslator(threading.Thread):
                 task: rtask.RTask = self.task_ctrl.queue_translate.get()
                 if task.text_transcribe is None or len(task.text_transcribe) <= 0:
                     continue
-                task.info.time_set("translate")
+
                 task.param.lang_des = self.lang_des
 
                 result = await self.translate(
@@ -126,8 +126,9 @@ class RTranslator(threading.Thread):
                 result = self.result_handle(result)
                 if result is None:
                     continue
-
                 task.text_translate = result
+                task.info.time_set("translate")
+                task.info.time_diff("transcribe", "translate", store="translate")
                 self.task_ctrl.queue_manifest.put(task)
             except Exception:
                 traceback.print_exc()

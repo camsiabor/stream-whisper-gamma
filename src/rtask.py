@@ -37,13 +37,19 @@ class RParam:
 
 class RInfo:
     times = {}
+    elapsed = {}
 
     def __init__(self):
         self.time_set("create")
-        self.time_set_as_str("create_str")
+        # self.time_set_as_str("create_str")
 
     def time_set(self, name: str):
-        self.times[name] = time.time_ns() / 1_000_000
+        self.times[name] = round(time.time_ns() / 1_000_000)
+
+    def time_elapsed(self, name: str, src: int = 0):
+        if src <= 0:
+            src = time.time_ns()
+        self.elapsed[name] = round(src / 1_000_000 - self.times[name])
 
     def time_set_as_str(self, name: str):
         self.times[name] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -56,8 +62,14 @@ class RInfo:
             return 0
         return ret
 
-    def time_diff(self, head: str, tail: str, raise_if_none=False):
-        return self.time_get(tail, raise_if_none) - self.time_get(head, raise_if_none)
+    def time_elapsed_get(self, name: str):
+        return self.elapsed.get(name, None)
+
+    def time_diff(self, head: str, tail: str, store: str = None, raise_if_none=False):
+        diff = self.time_get(tail, raise_if_none) - self.time_get(head, raise_if_none)
+        if store is not None:
+            self.elapsed[store] = diff
+        return diff
 
 
 class RCommand:
