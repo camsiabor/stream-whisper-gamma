@@ -1,5 +1,7 @@
 import datetime
+import threading
 import time
+import tkinter as tk
 
 import ollama
 import poe_api_wrapper
@@ -10,6 +12,7 @@ import src.service.google.translator as googletrans
 from src import rtask
 from src.common import sim
 from src.rrecord import Recorder
+from src.service.gui import barrage
 
 
 def test_config():
@@ -142,9 +145,93 @@ def test_denoising():
     recorder.record(callback=callback)
 
 
+def test_barrage():
+    def send_message():
+        message = entry.get()
+        label.config(text=message)
+        entry.delete(0, tk.END)
+
+    # Create the main window
+    window = tk.Tk()
+    window.title("Barrage GUI")
+
+    # Create a label to display the message
+    label = tk.Label(window, text="", font=("Arial", 16))
+    label.pack(pady=10)
+
+    # Create an entry field for input
+    entry = tk.Entry(window, font=("Arial", 12))
+    entry.pack(pady=10)
+
+    # Create a button to send the message
+    button = tk.Button(window, text="Send", command=send_message)
+    button.pack(pady=10)
+
+    # Start the main event loop
+    window.mainloop()
+
+
+def test_barrage_2():
+    # Create the main window
+
+    # Create the main window
+    window = tk.Tk()
+    window.attributes("-topmost", True)  # Set the window to be always on top
+
+    screen_w = window.winfo_screenwidth()
+    screen_h = window.winfo_screenheight()
+
+    window.geometry(f"{screen_w}x{screen_h}+{0}+{0}")  # Set window size and position
+    window.attributes("-transparentcolor", "#F0F0F0")
+    window.attributes("-toolwindow", True)
+    window.overrideredirect(True)
+
+    # Create a transparent canvas for the barrage text
+    canvas = tk.Canvas(window, highlightthickness=0)
+    canvas.pack(fill=tk.BOTH, expand=True)
+
+    # Create a list to store the barrage messages
+    barrage_messages = []
+
+    # Function to add a new barrage message
+    def add_barrage_message(message):
+        if len(barrage_messages) >= 10:
+            # Remove the oldest message if the limit is reached
+            canvas.delete(barrage_messages.pop(0))
+            # Move existing messages up by 30 pixels
+            for i in range(len(barrage_messages)):
+                canvas.move(barrage_messages[i], 0, -30)
+        x = 10
+        y = (len(barrage_messages) + 1) * 30  # Adjust the vertical position of each message
+        text = canvas.create_text(x, y, text=message, fill="#FF0000", font=("Arial", 24), anchor=tk.NW)
+        barrage_messages.append(text)
+
+    for i in range(15):
+        add_barrage_message(f"Message {i}")
+
+    # Start the main event loop
+    window.mainloop()
+
+
+def test_barrage_add(bar: barrage.RBarrage):
+    for i in range(12):
+        time.sleep(0.5)
+        bar.add_barrage_message(f"Message {i}\nPower {i}")
+
+
+def test_barrage_3():
+    bar = barrage.RBarrage(cfg=test_config())
+    t = threading.Thread(target=test_barrage_add, args=(bar,))
+    t.start()
+
+    bar.run()
+    t.join()
+
+
+
 if __name__ == '__main__':
     # asyncio.run(test_ollama())
     # test_poe()
     # test_denoising()
-    print("()" == "()")
+    test_barrage_3()
     pass

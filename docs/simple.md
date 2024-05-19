@@ -40,3 +40,7 @@ https://blog.csdn.net/yegeli/article/details/130538523
 # librosa
 
 https://blog.csdn.net/yegeli/article/details/130725503
+
+# gui
+
+https://blog.csdn.net/qq_39046854/article/details/130094311
