@@ -2,9 +2,9 @@ import logging
 import threading
 import tkinter as tk
 from collections import deque
-from tkinter.font import Font
 
-from barrage import RBarrage
+from src.common import sim
+from src.service.gui.barrage import RBarrage
 
 
 class RGuiRoot:
@@ -17,12 +17,6 @@ class RGuiRoot:
         self.barrage_max = 10
         self.barrages = deque(maxlen=self.barrage_max)
 
-        self.font = Font(family="Consolas", size=16)
-        self.font_color = "#FFA500"
-        self.font_background = "#000000"
-
-        self.margin = {'x': 10, 'y': 10}
-
         self.lock = threading.Lock()
 
         self.screen_h = 0
@@ -32,7 +26,6 @@ class RGuiRoot:
         self.thread: threading.Thread = None
 
         self.configure()
-        self.init()
 
     def configure(self) -> 'RGuiRoot':
         cfg_gui = self.cfg.get("gui", {})
@@ -41,22 +34,10 @@ class RGuiRoot:
         return self
 
     def configure_barrage(self, cfg_barrage):
-
         self.barrage_max = cfg_barrage.get("barrage_max", 10)
         self.barrages = deque(maxlen=self.barrage_max)
 
-        font_cfg = cfg_barrage.get("font", {})
-        font_name = font_cfg.get("family", "Consolas")
-        font_size = font_cfg.get("size", 16)
-        self.font = Font(family=font_name, size=font_size)
-        self.font_color = cfg_barrage.get("font_color", "#FFA500")
-        self.font_background = cfg_barrage.get("font_background", "#000000")
 
-        margin_cfg = cfg_barrage.get("margin", {})
-        self.margin = {
-            'x': margin_cfg.get("x", 10),
-            'y': margin_cfg.get("y", 10)
-        }
 
     def init(self):
 
@@ -102,18 +83,24 @@ class RGuiRoot:
             self.lock.release()
 
     def add_barrage(self, text: str):
+        cfg_barrage = sim.get(self.cfg, {}, "gui", "barrage")
         try:
             self.lock.acquire()
             print("adding")
-            unit = RBarrage(self, text)
+
+            unit = RBarrage(
+                root=self,
+                text=text,
+                cfg=cfg_barrage
+            )
 
             prev = self.barrages[-1] if len(self.barrages) > 0 else None
             if prev is not None:
                 target_y = prev.y
                 target_x = prev.x
             else:
-                target_y = self.screen_h - self.margin.get('y', 10)
-                target_x = self.margin.get('x', 10)
+                target_y = self.screen_h
+                target_x = 0
 
             self.main.after(0, unit.init, text)
             self.main.after(0, unit.move, target_x, target_y)

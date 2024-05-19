@@ -11,7 +11,6 @@ import src.service.google.translator as googletrans
 from src import rtask
 from src.common import sim
 from src.rrecord import Recorder
-from src.service.gui import barrage
 from src.service.gui.root import RGuiRoot
 
 
@@ -215,7 +214,7 @@ def test_barrage_2():
     window.mainloop()
 
 
-def test_barrage_add(bar: barrage.RGuiRoot):
+def test_barrage_add(bar: RGuiRoot):
     for i in range(3):
         time.sleep(0.5)
         bar.add_barrage(f"Message {i} Power {i}")
