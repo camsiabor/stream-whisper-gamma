@@ -1,3 +1,6 @@
+import datetime
+
+
 def get(cfg, default=None, *keys):
     value = cfg
     for key in keys:
@@ -23,3 +26,7 @@ def text_with_return(text: str, splitter=" ", max_len: int = 10) -> str:
         if i % max_len == 0:
             new_string += "\n"
     return new_string
+
+
+def datetime_str() -> str:
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]

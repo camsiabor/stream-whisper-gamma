@@ -54,23 +54,39 @@ class RGuiRoot:
 
         button_test = tk.Button(
             self.main,
-            text="TEST_ADD)",
+            text="ADD",
             bg="black", fg="white",
-            command=self.click_test,
+            command=self.click_add,
         )
-        button_test.pack(side="right", padx=10, pady=10)
+        button_test.pack(side="right", padx=3, pady=0)
 
         button_clear = tk.Button(
             self.main,
-            text="TEST_CLEAR",
+            text="CLEAR",
             bg="black", fg="white",
             command=self.click_clear
         )
-        button_clear.pack(side="right", padx=10, pady=10)
+        button_clear.pack(side="right", padx=3, pady=0)
 
-    def click_test(self):
-        count = len(self.barrages)
-        self.add_barrage(f"New Barrage Message | {count}")
+        button_hide = tk.Button(
+            self.main,
+            text="HIDE",
+            bg="black", fg="white",
+            command=self.click_hide
+        )
+        button_hide.pack(side="right", padx=3, pady=0)
+
+        button_show = tk.Button(
+            self.main,
+            text="SHOW",
+            bg="black", fg="white",
+            command=self.click_show
+        )
+        button_show.pack(side="right", padx=3, pady=0)
+
+    def click_add(self):
+        timing = sim.datetime_str()
+        self.add_barrage(f"New Barrage Message | {timing}")
 
     def click_clear(self):
         try:
@@ -79,6 +95,24 @@ class RGuiRoot:
             for unit in self.barrages:
                 self.main.after(0, unit.destroy)
             self.barrages.clear()
+        finally:
+            self.lock.release()
+
+    def click_hide(self):
+        try:
+            self.lock.acquire()
+            self.logger.debug("hiding barrages")
+            for unit in self.barrages:
+                self.main.after(0, unit.me.withdraw)
+        finally:
+            self.lock.release()
+
+    def click_show(self):
+        try:
+            self.lock.acquire()
+            self.logger.debug("showing barrages")
+            for unit in self.barrages:
+                self.main.after(0, unit.me.deiconify)
         finally:
             self.lock.release()
 
