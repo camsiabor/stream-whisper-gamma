@@ -99,9 +99,7 @@ class PoeCtrl:
         if bot.prompt_type == "none":
             prompt = text
         else:
-            prompt = f"translate following {src_name} to {des_name} " \
-                     f"and reply ONLY the translated {des_name} text " \
-                     f"and explain nothing: {text}"
+            prompt = langutil.translate_prompt(text, src_name, des_name)
 
         if bot.chat_id is None:
             res = self.agent.send_message(bot=bot.id, message=prompt, )

@@ -110,3 +110,8 @@ LANGUAGES = {
     'yo': 'yoruba',
     'zu': 'zulu',
 }
+
+
+def translate_prompt(text: str, lang_src: str, lang_des: str) -> str:
+    return (f"Translate the following {lang_src} text into {lang_des}, "
+            f"output translation text directly without any extra information:\n{text}")
