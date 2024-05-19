@@ -89,19 +89,19 @@ class RManifest(threading.Thread):
                 if text_target is None or len(text_target) <= 0:
                     continue
 
-                lang_src = task.param.lang_src
+                lang_src = task.text_info.language
                 lang_src_east_asian = lang_src == "zh" or lang_src == "ja" or lang_src == "ko"
 
                 lang_des = task.param.lang_des
                 lang_des_east_asian = lang_des == "zh" or lang_des == "ja" or lang_des == "ko"
 
-                task.text_transcribe = sim.text_with_return(
+                task.text_transcribe = sim.insert_newline_per(
                     text=task.text_transcribe.strip(),
                     splitter="" if lang_src_east_asian else " ",
                     max_len=16 if lang_src_east_asian else 10,
                 )
 
-                task.text_translate = sim.text_with_return(
+                task.text_translate = sim.insert_newline_per(
                     text=task.text_translate.strip(),
                     splitter="" if lang_des_east_asian else " ",
                     max_len=16 if lang_des_east_asian else 10,

@@ -14,18 +14,14 @@ def get(cfg, default=None, *keys):
     return value
 
 
-def text_with_return(text: str, splitter=" ", max_len: int = 10) -> str:
-    if text is None or len(text) <= 0:
-        return ""
-    words = text.split(splitter)
-    if len(words) <= max_len:
-        return text
-    new_string = ""
-    for i, word in enumerate(words, 1):
-        new_string += word + splitter
-        if i % max_len == 0:
-            new_string += "\n"
-    return new_string
+def insert_newline_per(text: str, max_len: int = 10) -> str:
+    words = text.split()
+    new_text = ""
+    for i, word in enumerate(words):
+        new_text += word + " "
+        if (i + 1) % max_len == 0:
+            new_text += "\n"
+    return new_text
 
 
 def datetime_str() -> str:
