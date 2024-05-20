@@ -53,7 +53,7 @@ class RManifest(threading.Thread):
         self.barrage.set(**cfg_barrage)
         return self
 
-    def manifest_transcribe(self, task):
+    def manifest_transcribe(self, task, timing, priority):
 
         text = task.text_transcribe
 
@@ -68,9 +68,11 @@ class RManifest(threading.Thread):
                 text=text,
                 font_color="#FFFFFF",
                 font_size_delta=-2,
+                timing=timing,
+                priority=priority,
             )
 
-    def manifest_phoneme(self, task):
+    def manifest_phoneme(self, task, timing, priority):
 
         text = task.text_phoneme
 
@@ -85,9 +87,11 @@ class RManifest(threading.Thread):
                 text=text,
                 font_color="#88CCEE",
                 font_size_delta=-2,
+                timing=timing,
+                priority=priority,
             )
 
-    def manifest_translate(self, task):
+    def manifest_translate(self, task, timing, priority):
         text = task.text_translate
         if text is None or len(text) <= 0:
             return
@@ -97,9 +101,11 @@ class RManifest(threading.Thread):
         if self.barrage.active and self.barrage.translated:
             self.task_ctrl.gui_root.add_barrage(
                 text=text,
+                timing=timing,
+                priority=priority,
             )
 
-    def manifest_performance(self, task):
+    def manifest_performance(self, task, timing, priority):
 
         do_console = self.console.active and self.console.performance
         do_barrage = self.barrage.active and self.barrage.performance
@@ -133,6 +139,8 @@ class RManifest(threading.Thread):
                 text=perf,
                 font_color="#FFFFFF",
                 font_size_delta=-5,
+                timing=timing,
+                priority=priority,
             )
 
     def run(self):
@@ -164,10 +172,12 @@ class RManifest(threading.Thread):
                     max_len=16 if lang_des_east_asian else 10,
                 )
 
-                self.manifest_transcribe(task)
-                self.manifest_phoneme(task)
-                self.manifest_translate(task)
-                self.manifest_performance(task)
+                timing = task.info.time_get("slice", True)
+
+                self.manifest_transcribe(task, timing, 1)
+                self.manifest_phoneme(task, timing, 2)
+                self.manifest_translate(task, timing, 3)
+                self.manifest_performance(task, timing, 4)
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
