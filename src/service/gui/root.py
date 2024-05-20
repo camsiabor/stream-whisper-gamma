@@ -21,6 +21,12 @@ class RGuiRoot:
 
         self.lock = threading.Lock()
 
+        self.width = 0
+        self.height = 0
+
+        self.width_ratio = 1
+        self.height_ratio = 1
+
         self.screen_h = 0
         self.screen_w = 0
 
@@ -31,13 +37,18 @@ class RGuiRoot:
 
     def configure(self) -> 'RGuiRoot':
         cfg_gui = self.cfg.get("gui", {})
+        self.width = cfg_gui.get("width", 0)
+        self.height = cfg_gui.get("height", 0)
+        self.width_ratio = cfg_gui.get("width_ratio", 1)
+        self.height_ratio = cfg_gui.get("height_ratio", 1)
+
         cfg_barrage = cfg_gui.get("barrage", {})
         self.configure_barrage(cfg_barrage)
         return self
 
     def configure_barrage(self, cfg_barrage):
         self.barrage_max = cfg_barrage.get("max", 10)
-        self.barrage_roof = cfg_barrage.get("root", 0)
+        self.barrage_roof = cfg_barrage.get("roof", 0)
         self.barrages = deque(maxlen=self.barrage_max)
 
     def init(self):
@@ -45,8 +56,17 @@ class RGuiRoot:
         self.screen_w = self.main.winfo_screenwidth()
         self.screen_h = self.main.winfo_screenheight()
 
+        if self.width <= 0:
+            self.width = self.screen_w
+
+        if self.height <= 0:
+            self.height = self.screen_h
+
+        self.width = round(self.width * self.width_ratio)
+        self.height = round(self.height * self.height_ratio)
+
         # Set window size and position
-        self.main.geometry(f"{self.screen_w}x{self.screen_h}+{0}+{0}")
+        self.main.geometry(f"{self.width}x{self.height}+{0}+{0}")
 
         self.main.attributes("-topmost", True)  # Set the window to be always on top
         self.main.attributes("-transparentcolor", "#F0F0F0")
@@ -204,7 +224,10 @@ class RGuiRoot:
             for i in range(len(self.barrages) - 1, -1, -1):
                 unit = self.barrages[i]
                 # print(f"[{i}] A unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
-                success = unit.move(unit.x, unit.y + unit.height - nova.height)
+                success = unit.move(
+                    x=unit.x, y=unit.y + unit.height - nova.height,
+                    roof=self.barrage_roof,
+                )
                 # print(f"[{i}] Z unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
                 # print("---------------------------")
                 if not success:
@@ -212,7 +235,8 @@ class RGuiRoot:
                     break
 
             if index_destroy >= 0:
-                del self.barrages[index_destroy:]
+                for i in range(index_destroy + 1):
+                    self.barrages.popleft()
 
             self.barrages.append(nova)
         except Exception as ex:
