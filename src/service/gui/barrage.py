@@ -10,16 +10,25 @@ class RBarrage:
             root,
             text: str = '',
             cfg: dict = None,
+            timing: int = 0,
+            priority: int = 0,
     ):
         self.root = root
         self.text = text
         self.cfg = cfg
+
+        self.timing = timing
+        self.priority = priority
 
         self.me = None
         self.label = None
 
         self.x = 0
         self.y = 0
+
+        self.x_geo = 0
+        self.y_geo = 0
+
         self.width = 0
         self.height = 0
 
@@ -94,19 +103,26 @@ class RBarrage:
 
         return self
 
+    def pos_geo(self, x, y):
+        x_geo = x + self.margin.get('x', 0)
+        y_geo = y - self.height - self.margin.get('y', 0)
+        return x_geo, y_geo
+
     def move(
             self,
             x: int, y: int,
             roof: int = 0,
-            height_offset: int = None
     ) -> bool:
-        if height_offset is None:
-            height_offset = self.height
-        self.x = x + self.margin.get('x', 0)
-        self.y = y - height_offset - self.margin.get('y', 0)
-        if self.y >= roof:
-            self.me.geometry(f"+{self.x}+{self.y}")
+
+        self.x = x
+        self.y = y
+
+        self.x_geo, self.y_geo = self.pos_geo(x, y)
+
+        if self.y_geo >= roof:
+            self.me.geometry(f"+{self.x_geo}+{self.y_geo}")
             return True
+
         self.destroy()
         return False
 

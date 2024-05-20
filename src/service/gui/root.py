@@ -1,4 +1,5 @@
 import logging
+import random
 import threading
 import tkinter as tk
 from collections import deque
@@ -29,6 +30,8 @@ class RGuiRoot:
 
         self.screen_h = 0
         self.screen_w = 0
+
+        self.click_add_index = 1
 
         # noinspection PyTypeChecker
         self.thread: threading.Thread = None
@@ -115,8 +118,14 @@ class RGuiRoot:
         button_show.pack(side="right", padx=3, pady=0)
 
     def click_add(self):
-        timing = sim.datetime_str()
-        self.add_barrage(f"New Barrage Message | {timing}")
+        try:
+            timing = random.randint(1, 1024)
+            self.add_barrage(
+                text=f"T {timing} I {self.click_add_index}",
+                timing=timing,
+            )
+        finally:
+            self.click_add_index += 1
 
     def click_clear(self):
         try:
@@ -154,6 +163,8 @@ class RGuiRoot:
             font_family='',
             font_color: str = '',
             font_background: str = '',
+            timing: int = 0,
+            priority: int = 0,
     ):
 
         if text is None or len(text) <= 0:
@@ -165,7 +176,9 @@ class RGuiRoot:
         nova = RBarrage(
             root=self,
             text=text,
-            cfg=cfg_barrage
+            cfg=cfg_barrage,
+            timing=timing,
+            priority=priority,
         )
 
         if font is not None:
@@ -192,10 +205,13 @@ class RGuiRoot:
             legacy = None
             if barrage_count >= self.barrage_max:
                 legacy = self.barrages.popleft()
-                self.main.after(0, legacy.destroy)
 
-            nova.x = nova.offset.get('x', 10)
-            nova.y = self.screen_h - nova.offset.get('y', 10)
+            sim.insort_ex(
+                container=self.barrages,
+                unit=nova,
+                right=True,
+                key=lambda x: x.timing + x.priority
+            )
 
             self.main.after(0, self.update_barrage, nova, legacy)
         finally:
@@ -208,28 +224,28 @@ class RGuiRoot:
 
             nova.init()
 
-            success = nova.move(
-                x=nova.x,
-                y=nova.y,
-                roof=self.barrage_roof,
-            )
-            if not success:
-                return
-
-            # print(f"barrages len: {len(self.barrages)}")
-            # print(f"nova.x: {nova.x}, nova.y: {nova.y}, nova.height: {nova.height}")
-            # print("---------------------------")
+            y_item = 0
+            h_item = 0
 
             index_destroy = -1
-            for i in range(len(self.barrages) - 1, -1, -1):
+            index_last = len(self.barrages) - 1
+            for i in range(index_last, -1, -1):
                 unit = self.barrages[i]
-                # print(f"[{i}] A unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
+
+                x_item = nova.offset.get('x', 10)
+                if index_last == i:
+                    y_item = self.screen_h - nova.offset.get('y', 10)
+                else:
+                    y_item = y_item - h_item
+                h_item = unit.height + unit.margin.get('y', 0)
+
+                # print(f"[{i}] B x_item: {x_item}, y_item: {y_item}, h_item: {h_item}")
+
                 success = unit.move(
-                    x=unit.x, y=unit.y + unit.height - nova.height,
+                    x=x_item, y=y_item,
                     roof=self.barrage_roof,
                 )
-                # print(f"[{i}] Z unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
-                # print("---------------------------")
+
                 if not success:
                     index_destroy = i
                     break
@@ -238,7 +254,6 @@ class RGuiRoot:
                 for i in range(index_destroy + 1):
                     self.barrages.popleft()
 
-            self.barrages.append(nova)
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
 

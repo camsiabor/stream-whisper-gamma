@@ -1,4 +1,5 @@
 import datetime
+import random
 import threading
 import time
 
@@ -145,9 +146,12 @@ def test_denoising():
 
 
 def test_barrage_add(bar: RGuiRoot):
-    for i in range(30):
-        # time.sleep(0.5)
-        bar.add_barrage(f"Message {i} Power {i}")
+    for i in range(0):
+        timing = random.randint(1, 1024)
+        bar.add_barrage(
+            text=f"T {timing} I {i}",
+            timing=timing,
+        )
 
 
 def test_barrage_3():
