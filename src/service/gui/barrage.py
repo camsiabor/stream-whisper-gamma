@@ -119,7 +119,7 @@ class RBarrage:
 
         self.x_geo, self.y_geo = self.pos_geo(x, y)
 
-        if self.y_geo >= roof:
+        if self.y_geo >= roof and self.me is not None:
             self.me.geometry(f"+{self.x_geo}+{self.y_geo}")
             return True
 
