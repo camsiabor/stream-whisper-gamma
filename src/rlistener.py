@@ -2,6 +2,7 @@ import logging
 import threading
 
 import pyaudiowpatch as pyaudio
+import redis
 
 from src import rtask, rrecord, rslice, rtranscribe, rtranslate, rmanifest
 from src.common import sim
@@ -31,11 +32,21 @@ class RListener(threading.Thread):
             cfg=cfg, gui_root=self.gui_root
         )
 
-        self.lock = threading.Lock()
-
         self.do_run = True
-
+        self.lock = threading.Lock()
         self.logger = logging.getLogger('listener')
+        self.configure()
+
+    def configure(self):
+        cfg_me = self.cfg.get("listener", {})
+        redis_active = sim.get(cfg_me, False, "redis")
+        if not redis_active:
+            return
+        cfg_redis = self.cfg.get("redis", {})
+        host = cfg_redis["host"]
+        port = cfg_redis["port"]
+        self.task_ctrl.redis = redis.Redis(**cfg_redis)
+        self.logger.info(f"redis client - {host}:{port}", )
 
     def gen_recorder(self, start=True):
         recorder = rrecord.Recorder(
@@ -101,8 +112,6 @@ class RListener(threading.Thread):
             self.renderers.clear()
         finally:
             self.lock.release()
-
-
 
     def run(self):
         self.logger.info("start")

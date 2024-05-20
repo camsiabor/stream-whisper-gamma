@@ -1,7 +1,11 @@
 import datetime
 import logging
+import multiprocessing
 import queue
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+import redis
 
 from src.service.gui.root import RGuiRoot
 
@@ -123,16 +127,24 @@ class RTask:
 
 
 class RTaskControl:
+    redis: redis.Redis
     queue_command = queue.Queue()
     queue_slice = queue.Queue()
     queue_transcribe = queue.Queue()
     queue_translate = queue.Queue()
     queue_manifest = queue.Queue()
 
-    def __init__(self, cfg, gui_root: RGuiRoot):
+    def __init__(
+            self,
+            cfg: dict,
+            gui_root: RGuiRoot,
+            thread_pool_size: int = 0,
+    ):
         self.cfg = cfg
         self.gui_root = gui_root
-        pass
+        if thread_pool_size <= 0:
+            thread_pool_size = multiprocessing.cpu_count()
+        self.thread_pool = ThreadPoolExecutor(max_workers=thread_pool_size)
 
     def terminate(self):
         self.queue_command.put("exit")
@@ -140,4 +152,4 @@ class RTaskControl:
         self.queue_transcribe.put(None)
         self.queue_translate.put(None)
         self.queue_manifest.put(None)
-        pass
+        self.thread_pool.shutdown()

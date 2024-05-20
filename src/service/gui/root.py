@@ -33,6 +33,8 @@ class RGuiRoot:
 
         self.click_add_index = 1
 
+        self.show = True
+
         # noinspection PyTypeChecker
         self.thread: threading.Thread = None
 
@@ -140,6 +142,7 @@ class RGuiRoot:
     def click_hide(self):
         try:
             self.lock.acquire()
+            self.show = False
             self.logger.debug("hiding barrages")
             for unit in self.barrages:
                 self.main.after(0, unit.me.withdraw)
@@ -149,6 +152,7 @@ class RGuiRoot:
     def click_show(self):
         try:
             self.lock.acquire()
+            self.show = True
             self.logger.debug("showing barrages")
             for unit in self.barrages:
                 self.main.after(0, unit.me.deiconify)
@@ -245,6 +249,9 @@ class RGuiRoot:
                     x=x_item, y=y_item,
                     roof=self.barrage_roof,
                 )
+
+                if not self.show:
+                    unit.me.withdraw()
 
                 if not success:
                     index_destroy = i

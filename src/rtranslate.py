@@ -23,25 +23,29 @@ class RTranslator(threading.Thread):
 
         self.task_ctrl = task_ctrl
         self.index = index
-
         self.do_run = True
-        self.lang_des = "en"
 
-        self.agent_google = None
+        self.agent_poe: poe_ctrl.PoeCtrl = None
+        self.agent_ollama: ollama_ctrl.OllamaCtrl = None
+        self.agent_google: google_trans.GoogleTransCtrl = None
+
+        self.phoneme_ja: cutlet.Cutlet = None
+
+        self.lang_des = "en"
 
         self.phoneme = {
             "convert": False,
             "translate": False,
         }
 
-        self.phoneme_ja = cutlet.Cutlet()
+        self.cache_redis = {
+            "fetch": 0,
+            "persist": 0,
+        }
 
-        self.agent_poe: poe_ctrl.PoeCtrl = None
-        self.agent_ollama: ollama_ctrl.OllamaCtrl = None
-        self.agent_google: google_trans.GoogleTransCtrl = None
         self.logger = logging.getLogger(f'translator-{self.index}')
-
         self.configure()
+        pass
 
     def configure(self):
         cfg = self.task_ctrl.cfg
@@ -49,15 +53,39 @@ class RTranslator(threading.Thread):
         trans_cfg = self.task_ctrl.cfg.get("translator", {})
         self.lang_des = trans_cfg.get('lang_des', 'en')
 
-        phoneme_cfg = trans_cfg.get("phoneme", {})
-        self.phoneme = {
-            "convert": sim.get(phoneme_cfg, False, "convert"),
-            "translate": sim.get(phoneme_cfg, False, "translate"),
-        }
-
         self.configure_poe(cfg)
         self.configure_ollama(cfg)
         self.configure_google(cfg)
+
+        self.configure_phoneme(cfg)
+        self.configure_cache_redis(cfg)
+        pass
+
+    def configure_phoneme(self, cfg):
+        phoneme_cfg = sim.get(cfg, {}, "translator", "phoneme")
+        convert = sim.get(phoneme_cfg, False, "convert")
+        self.phoneme = {
+            "convert": convert,
+            "translate": sim.get(phoneme_cfg, False, "translate"),
+        }
+        if convert:
+            self.phoneme_ja = cutlet.Cutlet()
+        pass
+
+    def configure_cache_redis(self, cfg):
+        cache_redis_cfg = sim.get(cfg, {}, "translator", "cache_redis")
+        fetch = sim.get(cache_redis_cfg, False, "fetch")
+        persist = sim.get(cache_redis_cfg, False, "persist")
+        if (fetch <= 0) and (persist <= 0):
+            return
+        if self.task_ctrl.redis is None:
+            self.logger.error("redis client is not available, cache_redis is disabled.")
+            return
+        self.cache_redis = {
+            "fetch": fetch,
+            "persist": persist,
+        }
+        pass
 
     def configure_google(self, cfg):
         active = sim.get(cfg, False, "translator", "agent_google", "active")
@@ -90,7 +118,7 @@ class RTranslator(threading.Thread):
             return ""
 
         lang_src = task.text_info.language.lower()
-        if lang_src == "ja":
+        if lang_src == "ja" and self.phoneme_ja is not None:
             task.text_phoneme = self.phoneme_ja.romaji(text)
 
         if task.text_phoneme is None or len(task.text_phoneme) <= 0:
@@ -138,7 +166,7 @@ class RTranslator(threading.Thread):
             self.logger.error(ex, exc_info=True, stack_info=True)
 
     @staticmethod
-    def result_handle(result):
+    def result_adapt(result):
         if result is None:
             return None
         if isinstance(result, tuple) and len(result) > 0:
@@ -146,6 +174,52 @@ class RTranslator(threading.Thread):
         if isinstance(result, str) and len(result) > 0:
             result = result.strip()
         return result
+
+    def cache_fetch(self, task):
+        translated = ""
+        transcribe_len = len(task.text_transcribe)
+        redis_fetch = self.cache_redis.get("fetch", 0)
+        lang_key = f"{task.text_info.language}_{self.lang_des}"
+
+        if redis_fetch > 0 and transcribe_len <= redis_fetch:
+            redis_ret = self.task_ctrl.redis.hmget(lang_key, task.text_transcribe)
+            if redis_ret is not None and len(redis_ret) > 0:
+                byte_data = redis_ret[0]
+                if byte_data is not None and len(byte_data) > 0:
+                    translated = byte_data.decode("utf-8")
+
+        cached = translated is not None and len(translated) > 0
+        if cached:
+            self.logger.info(f"cache_fetch {lang_key} | {task.text_transcribe} -> {translated}")
+
+        return translated, cached
+
+    def cache_persist(self, translated, task):
+
+        if translated is None:
+            return
+
+        translated_len = len(translated)
+        if translated_len <= 0:
+            return
+
+        transcribe_len = len(task.text_transcribe)
+
+        redis_persist = self.cache_redis.get("persist", 0)
+
+        if redis_persist > 0 and transcribe_len <= redis_persist:
+            lang_key = f"{task.text_info.language}_{self.lang_des}"
+            self.task_ctrl.thread_pool.submit(
+                self.task_ctrl.redis.hset,
+                lang_key,
+                task.text_transcribe,
+                translated
+            )
+            # self.task_ctrl.redis.hset(lang_key, task.text_transcribe, translated)
+            self.logger.info(f"cache_persist {lang_key} | {task.text_transcribe} -> {translated}")
+            pass
+
+        pass
 
     async def cycle(self):
         self.logger.info("running | destined language: %s" % self.lang_des)
@@ -166,16 +240,23 @@ class RTranslator(threading.Thread):
 
                 self.phoneme_handle(task)
 
-                result = await self.translate(
-                    task.text_transcribe,
-                    task.text_info.language,
-                    task,
-                )
+                translated, cached = self.cache_fetch(task)
 
-                result = self.result_handle(result)
-                if result is None:
+                if not cached:
+                    translated = await self.translate(
+                        task.text_transcribe,
+                        task.text_info.language,
+                        task,
+                    )
+
+                translated = self.result_adapt(translated)
+                if translated is None:
                     continue
-                task.text_translate = result
+
+                if not cached:
+                    self.cache_persist(translated, task)
+
+                task.text_translate = translated
                 task.info.time_set("translate")
                 task.info.time_diff("transcribe", "translate", store="translate")
                 self.task_ctrl.queue_manifest.put(task)
