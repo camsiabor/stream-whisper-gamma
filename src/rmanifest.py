@@ -6,11 +6,26 @@ from src.common import sim
 
 
 class RManifestUnit:
-    active: bool = True
+    active: bool = False
     phoneme: bool = False,
     transcribe: bool = True,
     translated: bool = True,
     performance: bool = False,
+
+    def set(
+            self,
+            active: bool = False,
+            phoneme: bool = False,
+            transcribe: bool = True,
+            translated: bool = True,
+            performance: bool = False
+    ) -> 'RManifestUnit':
+        self.active = active
+        self.phoneme = phoneme
+        self.transcribe = transcribe
+        self.translated = translated
+        self.performance = performance
+        return self
 
 
 class RManifest(threading.Thread):
@@ -22,46 +37,73 @@ class RManifest(threading.Thread):
         super().__init__()
         self.task_ctrl = task_ctrl
         self.do_run = True
-        self.show_transcribe = True
-        self.show_translated = True
-        self.show_performance = False
         self.logger = logging.getLogger(name='manifest')
-        self.console = True
-        self.barrage = False
+        self.console = RManifestUnit()
+        self.barrage = RManifestUnit()
         self.configure()
 
     def configure(self) -> 'RManifest':
         cfg = self.task_ctrl.cfg.get("manifest", {})
-        self.console = sim.get(cfg, True, "console")
-        self.show_transcribe = sim.get(cfg, True, "show_transcribe")
-        self.show_translated = sim.get(cfg, True, "show_translated")
-        self.show_performance = sim.get(cfg, False, "show_performance")
-
-        self.barrage = sim.get(cfg, True, "active")
-
+        cfg_console = sim.get(cfg, {}, "console")
+        cfg_barrage = sim.get(cfg, {}, "barrage")
+        self.console.set(**cfg_console)
+        self.barrage.set(**cfg_barrage)
         return self
 
     def manifest_transcribe(self, task):
 
-        if self.console:
-            print(f"[s] {task.text_transcribe}")
+        text = task.text_transcribe
 
-        if self.barrage:
+        if text is None or len(text) <= 0:
+            return
+
+        if self.console.active and self.console.transcribe:
+            print(f"[s] {text}")
+
+        if self.barrage.active and self.barrage.transcribe:
             self.task_ctrl.gui_root.add_barrage(
-                text=task.text_transcribe,
+                text=text,
                 font_color="#FFFFFF",
+                font_size_delta=-2,
+            )
+
+    def manifest_phoneme(self, task):
+
+        text = task.text_phoneme
+
+        if text is None or len(text) <= 0:
+            return
+
+        if self.console.active and self.console.phoneme:
+            print(f"[p] {task.text_transcribe}")
+
+        if self.barrage.active and self.barrage.phoneme:
+            self.task_ctrl.gui_root.add_barrage(
+                text=text,
+                font_color="#88CCEE",
+                font_size_delta=-2,
             )
 
     def manifest_translate(self, task):
-        if self.console:
-            print(f"[d] {task.text_translate}")
+        text = task.text_translate
+        if text is None or len(text) <= 0:
+            return
+        if self.console.active and self.console.translated:
+            print(f"[d] {text}")
 
-        if self.barrage:
+        if self.barrage.active and self.barrage.translated:
             self.task_ctrl.gui_root.add_barrage(
-                text=task.text_translate
+                text=text,
             )
 
     def manifest_performance(self, task):
+
+        do_console = self.console.active and self.console.performance
+        do_barrage = self.barrage.active and self.barrage.performance
+
+        if not (do_console or do_barrage):
+            return
+
         task.info.time_set("manifest")
         # task.info.time_set_as_str("manifest_str")
         task.info.time_diff("translate", "manifest", store="manifest")
@@ -80,8 +122,15 @@ class RManifest(threading.Thread):
                f"translate: {diff_translate} | manifest: {diff_manifest} | " \
                f"slice_pending: {pending_slice} | transcribe_pending: {pending_transcribe} | "
 
-        if self.console:
+        if do_console:
             print(perf)
+
+        if do_barrage:
+            self.task_ctrl.gui_root.add_barrage(
+                text=perf,
+                font_color="#FFFFFF",
+                font_size_delta=-5,
+            )
 
     def run(self):
         self.logger.info("running")
@@ -112,14 +161,10 @@ class RManifest(threading.Thread):
                     max_len=16 if lang_des_east_asian else 10,
                 )
 
-                if self.show_transcribe:
-                    self.manifest_transcribe(task)
-
-                if self.show_translated:
-                    self.manifest_translate(task)
-
-                if self.show_performance:
-                    self.manifest_performance(task)
+                self.manifest_transcribe(task)
+                self.manifest_phoneme(task)
+                self.manifest_translate(task)
+                self.manifest_performance(task)
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

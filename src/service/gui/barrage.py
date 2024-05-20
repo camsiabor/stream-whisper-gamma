@@ -94,13 +94,21 @@ class RBarrage:
 
         return self
 
-    def move(self, x: int, y: int, height_offset: int = None) -> 'RBarrage':
+    def move(
+            self,
+            x: int, y: int,
+            roof: int = 0,
+            height_offset: int = None
+    ) -> bool:
         if height_offset is None:
             height_offset = self.height
         self.x = x + self.margin.get('x', 0)
         self.y = y - height_offset - self.margin.get('y', 0)
-        self.me.geometry(f"+{self.x}+{self.y}")
-        return self
+        if self.y >= roof:
+            self.me.geometry(f"+{self.x}+{self.y}")
+            return True
+        self.destroy()
+        return False
 
     def destroy(self):
         if self.me is not None:

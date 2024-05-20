@@ -16,6 +16,7 @@ class RGuiRoot:
         self.cfg = cfg
         self.main = tk.Tk()
         self.barrage_max = 10
+        self.barrage_roof = 0
         self.barrages = deque(maxlen=self.barrage_max)
 
         self.lock = threading.Lock()
@@ -36,6 +37,7 @@ class RGuiRoot:
 
     def configure_barrage(self, cfg_barrage):
         self.barrage_max = cfg_barrage.get("max", 10)
+        self.barrage_roof = cfg_barrage.get("root", 0)
         self.barrages = deque(maxlen=self.barrage_max)
 
     def init(self):
@@ -128,6 +130,8 @@ class RGuiRoot:
             self,
             text: str,
             font: Font = None,
+            font_size_delta: int = 0,
+            font_family='',
             font_color: str = '',
             font_background: str = '',
     ):
@@ -146,6 +150,13 @@ class RGuiRoot:
 
         if font is not None:
             nova.font = font
+
+        if font_size_delta != 0:
+            font_size = nova.font.cget("size")
+            nova.font.config(size=font_size + font_size_delta)
+
+        if font_family is not None and len(font_family) > 0:
+            nova.font.config(family=font_family)
 
         if font_color is not None and len(font_color) > 0:
             nova.font_color = font_color
@@ -176,18 +187,32 @@ class RGuiRoot:
                 legacy.destroy()
 
             nova.init()
-            nova.move(nova.x, nova.y)
+
+            success = nova.move(
+                x=nova.x,
+                y=nova.y,
+                roof=self.barrage_roof,
+            )
+            if not success:
+                return
 
             # print(f"barrages len: {len(self.barrages)}")
             # print(f"nova.x: {nova.x}, nova.y: {nova.y}, nova.height: {nova.height}")
             # print("---------------------------")
 
+            index_destroy = -1
             for i in range(len(self.barrages) - 1, -1, -1):
                 unit = self.barrages[i]
                 # print(f"[{i}] A unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
-                unit.move(unit.x, unit.y + unit.height - nova.height)
+                success = unit.move(unit.x, unit.y + unit.height - nova.height)
                 # print(f"[{i}] Z unit.x: {unit.x}, unit.y: {unit.y}, unit.height: {unit.height}")
                 # print("---------------------------")
+                if not success:
+                    index_destroy = i
+                    break
+
+            if index_destroy >= 0:
+                del self.barrages[index_destroy:]
 
             self.barrages.append(nova)
         except Exception as ex:

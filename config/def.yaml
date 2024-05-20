@@ -19,12 +19,17 @@ transcriber:
   local_files_only: false
   device: "cuda"
   lang_src: "japanese"
-  beam_size: 10
+  beam_size: 15
   prompt: "翻訳する"
 
 
 translator:
   lang_des: "en"
+  phoneme:
+    convert: true
+    translate: false
+  agent_pass:
+    active: false
   agent_google:
     active: true
     domain: "hk"
@@ -32,23 +37,31 @@ translator:
   agent_poe:
     active: false
   agent_ollama:
-    active: false
+    active: true
 
 
 manifest:
-  console: true
-  barrage: true
-  show_transcribe: true
-  show_translated: true
-  show_performance: true
+  console:
+    active: true
+    phoneme: true
+    transcribe: true
+    translated: true
+    performance: true
+  barrage:
+    active: true
+    phoneme: true
+    transcribe: true
+    translated: true
+    performance: false
 
 gui:
   active: true
   barrage:
-    max: 26
+    max: 100
+    roof: 200
     font:
       family: "Consolas"
-      size: 13
+      size: 20
       color: "#FFA500"
       background: "#000000"
     margin:
@@ -59,18 +72,14 @@ gui:
       y: 120
 
 
-
-
-
-
 poe:
   active: true
   token:
-    b: ""
-    lat: ""
+    b:
+    lat:
   translate:
     all:
-      id: ""
+      id:
       prompt_type: ""
 
 
@@ -79,8 +88,8 @@ ollama:
   host: "http://127.0.0.1:11434"
   translate:
     all:
-      id: "L3-lexi-8b-q6"
-      # id: "L3-dolphin-8b-q6"
+      # id: "L3-lexi-8b-q6"
+      id: "L3-dolphin-8b-q6"
       # id: "lq-14b"
       # id: "sakura-13b"
       prompt_type: ""
