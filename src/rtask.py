@@ -106,6 +106,7 @@ class RTask:
         self.audio = audio
         self.text_transcribe = ""
         self.text_translate = ""
+        self.text_phoneme = ""
         self.text_info = None
 
         self.text_start = "",

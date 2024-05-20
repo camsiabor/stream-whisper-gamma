@@ -232,10 +232,20 @@ def test_barrage_3():
     # t.join()
 
 
+def test_japanese_romanji():
+    import cutlet
+    katsu = cutlet.Cutlet()
+    ret = katsu.romaji("カツカレーは美味しい")
+    print(ret)
+
+
+
 
 if __name__ == '__main__':
     # asyncio.run(test_ollama())
     # test_poe()
     # test_denoising()
-    test_barrage_3()
+    # test_barrage_3()
+    test_japanese_romanji()
+
     pass

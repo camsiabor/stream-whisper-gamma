@@ -5,6 +5,14 @@ from src import rtask
 from src.common import sim
 
 
+class RManifestUnit:
+    active: bool = True
+    phoneme: bool = False,
+    transcribe: bool = True,
+    translated: bool = True,
+    performance: bool = False,
+
+
 class RManifest(threading.Thread):
 
     def __init__(
@@ -74,7 +82,6 @@ class RManifest(threading.Thread):
 
         if self.console:
             print(perf)
-
 
     def run(self):
         self.logger.info("running")

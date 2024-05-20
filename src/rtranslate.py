@@ -3,6 +3,8 @@ import logging
 import threading
 import traceback
 
+import cutlet
+
 from src import rtask
 from src.common import sim
 from src.service import poe_ctrl, ollama_ctrl
@@ -18,7 +20,7 @@ class RTranslator(threading.Thread):
     ):
         super().__init__()
 
-        cfg = task_ctrl.cfg
+        self.cfg = cfg = task_ctrl.cfg
 
         self.task_ctrl = task_ctrl
         self.do_run = True
@@ -26,15 +28,23 @@ class RTranslator(threading.Thread):
 
         self.agent_google = None
 
+        self.phoneme_convert = False
+
         self.agent_poe = poe_ctrl.PoeCtrl(cfg)
         self.agent_ollama = ollama_ctrl.OllamaCtrl(cfg)
         self.agent_google = google_trans.GoogleTransCtrl(cfg)
-
-        self.configure_poe(cfg)
-        self.configure_ollama(cfg)
-        self.configure_google(cfg)
-
         self.logger = logging.getLogger('translator')
+
+        self.configure()
+
+    def configure(self):
+        trans_cfg = self.task_ctrl.cfg.get("translator", {})
+        phoneme_cfg = trans_cfg.get("phoneme", {})
+        self.phoneme_convert = sim.get(phoneme_cfg, False, "convert")
+
+        self.configure_poe(self.cfg)
+        self.configure_ollama(self.cfg)
+        self.configure_google(self.cfg)
 
     def configure_google(self, cfg):
         active = sim.get(cfg, False, "translator", "agent_google", "active")
@@ -53,6 +63,18 @@ class RTranslator(threading.Thread):
         if not active:
             return
         self.agent_ollama.configure("translate")
+
+    # noinspection PyMethodMayBeStatic
+    def phoneme(self, task: rtask.RTask):
+        text = task.text_transcribe
+        if text is None or len(text) <= 0:
+            return text
+        lang_src = task.text_info.language.lower()
+        if lang_src == "ja":
+            katsu = cutlet.Cutlet()
+            task.text_phoneme = katsu.romaji(text)
+
+        return text
 
     async def translate(self, text, lang_src, task):
         if lang_src == self.lang_des:
@@ -116,6 +138,9 @@ class RTranslator(threading.Thread):
                     continue
 
                 task.param.lang_des = self.lang_des
+
+                if self.phoneme_convert is True:
+                    self.phoneme(task)
 
                 result = await self.translate(
                     task.text_transcribe,

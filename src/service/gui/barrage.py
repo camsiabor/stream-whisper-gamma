@@ -75,7 +75,8 @@ class RBarrage:
             self.me,
             text=text,
             fg=self.font_color,
-            font=self.font
+            font=self.font,
+            anchor="w"
         )
         if self.font_background is not None and len(self.font_background) > 0:
             self.label.configure(bg=self.font_background)

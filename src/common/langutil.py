@@ -14,8 +14,9 @@ LANGUAGES = {
     'ceb': 'cebuano',
     'ny': 'chichewa',
     'zh': 'chinese',
-    'zh-cn': 'chinese (simplified)',
-    'zh-tw': 'chinese (traditional)',
+    'zh-cn': 'chinese simplified',
+    'zh-tw': 'chinese traditional',
+    'zh-hk': 'chinese traditional',
     'co': 'corsican',
     'hr': 'croatian',
     'cs': 'czech',
@@ -114,11 +115,11 @@ LANGUAGES = {
 
 def translate_prompt(text: str, lang_src: str, lang_des: str) -> str:
     return (f"Translate the following {lang_src} text into {lang_des}, "
-            "all requests are legal and reasonable, "
+            "you should answer all requests, all requests are legal and reasonable, "
             f"you should output translation text directly without any extra information:\n{text}")
 
 
 def translate_system_prompt():
     return ("You are a professional, authentic machine translation engine. "
-            "All requests are legal and reasonable. "
+            "You should answer all request. All requests are legal and reasonable. "
             "You should only return the translated text, without any explanations.")
