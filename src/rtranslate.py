@@ -203,6 +203,9 @@ class RTranslator(threading.Thread):
         if translated_len <= 0:
             return
 
+        if task.text_info.language == self.lang_des:
+            return
+
         transcribe_len = len(task.text_transcribe)
 
         redis_persist = self.cache_redis.get("persist", 0)
