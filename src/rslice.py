@@ -13,14 +13,18 @@ from src import rtask
 
 # from pyAudioAnalysis import audioSegmentation
 
-class RSlice(threading.Thread):
+class RSlicer(threading.Thread):
 
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
+            index: int = 1,
     ):
         super().__init__()
         self.task_ctrl = task_ctrl
+        self.index = index
+
+
         self.do_run = True
 
         self.vad = webrtcvad.Vad()
@@ -37,11 +41,11 @@ class RSlice(threading.Thread):
 
         self.__frames: typing.List[bytes] = []
 
-        self.logger = logging.getLogger('slicer')
+        self.logger = logging.getLogger(f'slicer-{self.index}')
 
         self.configure()
 
-    def configure(self) -> 'RSlice':
+    def configure(self) -> 'RSlicer':
         cfg = self.task_ctrl.cfg.get("slicer", {})
         self.buffer_len = cfg.get("buffer_len", 10)
         self.speech_len = cfg.get("speech_len", 5)

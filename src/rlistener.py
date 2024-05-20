@@ -4,78 +4,122 @@ import threading
 import pyaudiowpatch as pyaudio
 
 from src import rtask, rrecord, rslice, rtranscribe, rtranslate, rmanifest
+from src.common import sim
 from src.service.gui.root import RGuiRoot
 
 
 class RListener(threading.Thread):
+    recorders = []
+    slicers = []
+    transcribers = []
+    translators = []
+    renderers = []
+
     def __init__(
             self,
-            cfg, p: pyaudio.PyAudio = None):
+            cfg: dict,
+            py_audio: pyaudio.PyAudio = None):
         super().__init__()
-        self.py_audio = p
+        self.py_audio = py_audio
+
         if self.py_audio is None:
             self.py_audio = pyaudio.PyAudio()
-        self.cfg = cfg
 
+        self.cfg: dict = cfg
         self.gui_root = RGuiRoot(cfg)
-        self.task_ctrl = rtask.RTaskControl(cfg, gui_root=self.gui_root)
+        self.task_ctrl = rtask.RTaskControl(
+            cfg=cfg, gui_root=self.gui_root
+        )
 
-        self.recorder = None
-        self.slicer = None
-        self.transcriber = None
-        self.translator = None
-        self.renderer = None
+        self.lock = threading.Lock()
 
         self.do_run = True
 
         self.logger = logging.getLogger('listener')
 
-    def configure_recorder(self):
-        self.recorder = rrecord.Recorder(
-            p_audio=self.py_audio,
-            task_ctrl=self.task_ctrl,
-        )
+    def gen_recorder(self, start=True):
+        number = sim.get(self.cfg, 1, "recorder", "number")
+        for i in range(number):
+            recorder = rrecord.Recorder(
+                p_audio=self.py_audio,
+                task_ctrl=self.task_ctrl,
+                index=i + 1,
+            )
+            self.recorders.append(recorder)
+            if start:
+                recorder.start()
 
-    def configure_slicer(self):
-        self.slicer = rslice.RSlice(
-            task_ctrl=self.task_ctrl,
-        )
+    def gen_slicer(self, start=True):
+        number = sim.get(self.cfg, 1, "slicer", "number")
+        for i in range(number):
+            slicer = rslice.RSlicer(
+                task_ctrl=self.task_ctrl,
+                index=i + 1,
+            )
+            self.slicers.append(slicer)
+            if start:
+                slicer.start()
 
-    def configure_transcriber(self):
+    def gen_transcriber(self, start=True):
+        number = sim.get(self.cfg, 1, "transcriber", "number")
+        for i in range(number):
+            transcriber = rtranscribe.RTranscriber(
+                task_ctrl=self.task_ctrl,
+                index=i + 1,
+            ).init(force=True)
+            self.transcribers.append(transcriber)
+            if start:
+                transcriber.start()
 
-        self.transcriber = rtranscribe.RTranscriber(
-            task_ctrl=self.task_ctrl,
-        ).init(force=True)
+    def gen_translator(self, start=True):
+        number = sim.get(self.cfg, 1, "translator", "number")
+        for i in range(number):
+            translator = rtranslate.RTranslator(
+                task_ctrl=self.task_ctrl,
+                index=i + 1,
+            )
+            self.translators.append(translator)
+            if start:
+                translator.start()
 
-    def configure_translator(self):
-        self.translator = rtranslate.RTranslator(
-            task_ctrl=self.task_ctrl,
-            lang_des=self.cfg['translator'].get('lang_des', 'en'),
-        )
-
-    def configure_renderer(self):
-        self.renderer = rmanifest.RManifest(
-            task_ctrl=self.task_ctrl,
-        )
+    def gen_renderer(self, start=True):
+        number = sim.get(self.cfg, 1, "renderer", "number")
+        for i in range(number):
+            renderer = rmanifest.RManifest(
+                task_ctrl=self.task_ctrl,
+                index=i + 1,
+            )
+            self.renderers.append(renderer)
+            if start:
+                renderer.start()
 
     def terminiate(self):
+        self.lock.acquire()
+        try:
+            self.task_ctrl.queue_command.put("exit")
+            self.recorders.clear()
+            self.slicers.clear()
+            self.transcribers.clear()
+            self.translators.clear()
+            self.renderers.clear()
+        finally:
+            self.lock.release()
 
-        self.task_ctrl.queue_command.put("exit")
+
 
     def run(self):
         self.logger.info("start")
         try:
-            self.configure_recorder()
-            self.configure_slicer()
-            self.configure_transcriber()
-            self.configure_translator()
-            self.configure_renderer()
 
-            self.renderer.start()
-            self.translator.start()
-            self.transcriber.start()
-            self.slicer.start()
-            self.recorder.start()
+            self.lock.acquire()
+            try:
+                self.gen_renderer()
+                self.gen_translator()
+                self.gen_transcriber()
+                self.gen_slicer()
+                self.gen_recorder()
+            finally:
+                self.lock.release()
 
             while self.do_run:
                 cmd: rtask.RCommand = self.task_ctrl.queue_command.get()

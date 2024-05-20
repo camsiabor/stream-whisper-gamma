@@ -25,15 +25,17 @@ class RTranscriber(threading.Thread):
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
+            index: int = 1,
     ) -> None:
         super().__init__()
+
         self.task_ctrl = task_ctrl
+        self.index = index
+
         self.do_run = True
         self._model = None
 
-        # self.katsu = cutlet.Cutlet()
-
-        self.logger = logging.getLogger('transcriber')
+        self.logger = logging.getLogger(f'transcriber-{self.index}')
         self.configure()
 
     """ FasterWhisper 语音转写

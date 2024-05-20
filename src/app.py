@@ -63,7 +63,7 @@ if __name__ == "__main__":
         py_audio = pyaudio.PyAudio()
         rlistener = rlistener.RListener(
             cfg=cfg,
-            p=py_audio,
+            py_audio=py_audio,
         )
         rlistener.start()
         rlistener.gui_mainloop()

@@ -33,9 +33,12 @@ class RManifest(threading.Thread):
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
+            index: int = 1,
     ):
         super().__init__()
         self.task_ctrl = task_ctrl
+        self.index = index
+
         self.do_run = True
         self.logger = logging.getLogger(name='manifest')
         self.console = RManifestUnit()

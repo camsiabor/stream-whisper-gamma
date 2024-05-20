@@ -26,11 +26,14 @@ class Recorder(threading.Thread):
     def __init__(self,
                  p_audio: pyaudio.PyAudio,
                  task_ctrl: rtask.RTaskControl,
+                 index: int = 1,
                  ):
 
         super().__init__()
 
-        self.p = p_audio
+        self.py_audio = p_audio
+        self.task_ctrl = task_ctrl
+        self.index = index
 
         # 设置 VAD 的敏感度。参数是一个 0 到 3 之间的整数。0 表示对非语音最不敏感，3 最敏感。
         self.vad = webrtcvad.Vad()
@@ -47,8 +50,6 @@ class Recorder(threading.Thread):
 
         self.frame_duration = 10
 
-        self.task_ctrl = task_ctrl
-
         self.output_data = queue.Queue()
 
         self.frame_cache = []
@@ -56,7 +57,7 @@ class Recorder(threading.Thread):
         self.flush_interval = 0.1
         self.flush_thread = None
 
-        self.logger = logging.getLogger('recorder')
+        self.logger = logging.getLogger(f'recorder-{self.index}')
 
         self.configure(self.task_ctrl.cfg)
 
@@ -99,16 +100,15 @@ class Recorder(threading.Thread):
 
     def get_default_wasapi_device(self):
         try:  # Get default WASAPI info
-            wasapi_info = self.p.get_host_api_info_by_type(pyaudio.paWASAPI)
+            wasapi_info = self.py_audio.get_host_api_info_by_type(pyaudio.paWASAPI)
         except OSError:
             raise WASAPINotFound("Looks like WASAPI is not available on the system")
 
-
         # Get default WASAPI speakers
-        sys_default_speakers = self.p.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
+        sys_default_speakers = self.py_audio.get_device_info_by_index(wasapi_info["defaultOutputDevice"])
 
         if not sys_default_speakers["isLoopbackDevice"]:
-            for loopback in self.p.get_loopback_device_info_generator():
+            for loopback in self.py_audio.get_loopback_device_info_generator():
                 if sys_default_speakers["name"] in loopback["name"]:
                     return loopback
             else:
@@ -117,7 +117,7 @@ class Recorder(threading.Thread):
                     "devices")
 
     def get_sample_width(self):
-        return self.p.get_sample_size(self.data_format)
+        return self.py_audio.get_sample_size(self.data_format)
 
     def get_sample_rate(self):
         if self.sample_rate is None or self.sample_rate <= 0:
@@ -156,14 +156,14 @@ class Recorder(threading.Thread):
 
         self.logger.info(f"init | device: {self.device}")
 
-        self.stream = self.p.open(format=self.data_format,
-                                  channels=device_channels,
-                                  rate=sample_rate,
-                                  frames_per_buffer=self.chunk_size,
-                                  input=True,
-                                  input_device_index=device_index,
-                                  # stream_callback=stream_callback
-                                  )
+        self.stream = self.py_audio.open(format=self.data_format,
+                                         channels=device_channels,
+                                         rate=sample_rate,
+                                         frames_per_buffer=self.chunk_size,
+                                         input=True,
+                                         input_device_index=device_index,
+                                         # stream_callback=stream_callback
+                                         )
 
         return self.stream
 
