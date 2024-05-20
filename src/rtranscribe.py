@@ -108,7 +108,7 @@ class RTranscriber(threading.Thread):
                 yield t
 
     def run(self):
-        self.logger.info(f"running | source lang: {self.lang_src}")
+        self.logger.info(f"running | source language: {self.lang_src}")
         error_count = 0
         while self.do_run:
             try:

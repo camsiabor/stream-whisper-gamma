@@ -38,16 +38,13 @@ class RListener(threading.Thread):
         self.logger = logging.getLogger('listener')
 
     def gen_recorder(self, start=True):
-        number = sim.get(self.cfg, 1, "recorder", "number")
-        for i in range(number):
-            recorder = rrecord.Recorder(
-                p_audio=self.py_audio,
-                task_ctrl=self.task_ctrl,
-                index=i + 1,
-            )
-            self.recorders.append(recorder)
-            if start:
-                recorder.start()
+        recorder = rrecord.Recorder(
+            p_audio=self.py_audio,
+            task_ctrl=self.task_ctrl,
+        )
+        self.recorders.append(recorder)
+        if start:
+            recorder.start()
 
     def gen_slicer(self, start=True):
         number = sim.get(self.cfg, 1, "slicer", "number")

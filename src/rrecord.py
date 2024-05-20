@@ -26,14 +26,12 @@ class Recorder(threading.Thread):
     def __init__(self,
                  p_audio: pyaudio.PyAudio,
                  task_ctrl: rtask.RTaskControl,
-                 index: int = 1,
                  ):
 
         super().__init__()
 
         self.py_audio = p_audio
         self.task_ctrl = task_ctrl
-        self.index = index
 
         # 设置 VAD 的敏感度。参数是一个 0 到 3 之间的整数。0 表示对非语音最不敏感，3 最敏感。
         self.vad = webrtcvad.Vad()
@@ -57,7 +55,7 @@ class Recorder(threading.Thread):
         self.flush_interval = 0.1
         self.flush_thread = None
 
-        self.logger = logging.getLogger(f'recorder-{self.index}')
+        self.logger = logging.getLogger(f'recorder')
 
         self.configure(self.task_ctrl.cfg)
 

@@ -148,7 +148,7 @@ class RTranslator(threading.Thread):
         return result
 
     async def cycle(self):
-        self.logger.info("running")
+        self.logger.info("running | destined language: %s" % self.lang_des)
         error_count = 0
 
         try:
