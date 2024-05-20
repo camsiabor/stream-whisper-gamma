@@ -241,9 +241,16 @@ class RTranslator(threading.Thread):
 
                 task.param.lang_des = self.lang_des
 
+                translated = None
+                cached = False
+                if task.text_info.language == self.lang_des:
+                    translated = task.text_transcribe
+                    cached = True
+
                 self.phoneme_handle(task)
 
-                translated, cached = self.cache_fetch(task)
+                if not cached:
+                    translated, cached = self.cache_fetch(task)
 
                 if not cached:
                     translated = await self.translate(
