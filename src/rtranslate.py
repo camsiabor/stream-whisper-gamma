@@ -129,7 +129,7 @@ class RTranslator(threading.Thread):
 
         return task.text_phoneme
 
-    async def translate(self, text, lang_src, task):
+    async def translate(self, text, lang_src):
         if lang_src == self.lang_des:
             return text
 
@@ -246,7 +246,6 @@ class RTranslator(threading.Thread):
                     translated = await self.translate(
                         task.text_transcribe,
                         task.text_info.language,
-                        task,
                     )
 
                 translated = self.result_adapt(translated)
