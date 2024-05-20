@@ -1,3 +1,6 @@
+listener:
+  redis: true
+
 recorder:
   chunk_size: 65536
   frame_duration: 10
@@ -12,7 +15,7 @@ slicer:
   slice_mode: vad
 
 transcriber:
-  number: 1
+  number: 2
   # model_size: "Systran/faster-whisper-large-v3"
   model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   # model_size: "JhonVanced/whisper-large-v3-japanese-4k-steps-ct2"
@@ -20,17 +23,21 @@ transcriber:
   local_files_only: false
   device: "cuda"
   lang_src: "japanese"
-  beam_size: 15
+  beam_size: 7
   prompt: "翻訳する"
 
 
 translator:
+  number: 3
   lang_des: "en"
   phoneme:
     convert: true
     translate: false
   agent_pass:
     active: false
+  cache_redis:
+    fetch: 6
+    persist: 6
   agent_google:
     active: true
     domain: "hk"
@@ -57,7 +64,7 @@ manifest:
 
 gui:
   active: true
-  width_ratio: 0.25
+  width_ratio: 0.9
   barrage:
     max: 100
     roof: 100
@@ -77,11 +84,11 @@ gui:
 poe:
   active: false
   token:
-    b:
-    lat:
+    b: ""
+    lat: ""
   translate:
     all:
-      id:
+      id: ""
       prompt_type: ""
 
 
@@ -98,5 +105,15 @@ ollama:
 
       # prompt_type: ""
       # prompt_type: "none"
+
+
+
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  db: 0
+  username:
+  password:
+
 
 
