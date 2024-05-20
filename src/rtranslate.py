@@ -47,7 +47,7 @@ class RTranslator(threading.Thread):
         cfg = self.task_ctrl.cfg
 
         trans_cfg = self.task_ctrl.cfg.get("translator", {})
-        self.lang_des = trans_cfg.get('lang_des', 'en'),
+        self.lang_des = trans_cfg.get('lang_des', 'en')
 
         phoneme_cfg = trans_cfg.get("phoneme", {})
         self.phoneme = {
