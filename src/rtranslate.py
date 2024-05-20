@@ -107,13 +107,13 @@ class RTranslator(threading.Thread):
 
         ret = ""
 
-        if len(ret) <= 0 and self.agent_ollama.active:
+        if len(ret) <= 0 and self.agent_ollama is not None:
             try:
                 ret = await self.agent_ollama.translate(text, lang_src, self.lang_des)
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
 
-        if len(ret) <= 0 and self.agent_poe.active:
+        if len(ret) <= 0 and self.agent_poe is not None:
             try:
                 ret = self.agent_poe.translate(text, lang_src, self.lang_des)
             except Exception as ex:

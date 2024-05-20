@@ -12,6 +12,7 @@ slicer:
   slice_mode: vad
 
 transcriber:
+  number: 1
   # model_size: "Systran/faster-whisper-large-v3"
   model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   # model_size: "JhonVanced/whisper-large-v3-japanese-4k-steps-ct2"
@@ -37,7 +38,7 @@ translator:
   agent_poe:
     active: false
   agent_ollama:
-    active: true
+    active: false
 
 
 manifest:
@@ -56,12 +57,13 @@ manifest:
 
 gui:
   active: true
+  width_ratio: 0.25
   barrage:
     max: 100
-    roof: 200
+    roof: 100
     font:
       family: "Consolas"
-      size: 20
+      size: 13
       color: "#FFA500"
       background: "#000000"
     margin:
@@ -73,7 +75,7 @@ gui:
 
 
 poe:
-  active: true
+  active: false
   token:
     b:
     lat:
