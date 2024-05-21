@@ -201,6 +201,9 @@ class RGuiRoot:
         if font_background is not None and len(font_background) > 0:
             nova.font_background = font_background
 
+        self.main.after(0, self.update_barrage, nova)
+
+    def update_barrage(self, nova: RBarrage):
         try:
             self.lock.acquire()
 
@@ -216,16 +219,6 @@ class RGuiRoot:
                 right=True,
                 key=lambda x: x.timing + x.priority
             )
-
-            # self.update_barrage(nova, legacy)
-
-            self.main.after(0, self.update_barrage, nova, legacy)
-        finally:
-            self.lock.release()
-
-    def update_barrage(self, nova: RBarrage, legacy: RBarrage):
-        try:
-            self.lock.acquire()
 
             if legacy is not None:
                 legacy.destroy()
