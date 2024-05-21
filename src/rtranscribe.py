@@ -33,7 +33,7 @@ class RTranscriber(threading.Thread):
         self.index = index
 
         self.do_run = True
-        self._model = None
+        self.model = None
 
         self.logger = logging.getLogger(f'transcriber-{self.index}')
         self.configure()
@@ -60,10 +60,10 @@ class RTranscriber(threading.Thread):
         return self
 
     def init(self, force: bool = False) -> 'RTranscriber':
-        if self._model is not None and force is False:
+        if self.model is not None and force is False:
             return self
         # local_file_only = True if len(self.download_root) > 0 else False
-        self._model = WhisperModel(
+        self.model = WhisperModel(
             model_size_or_path=self.model_size,
             device=self.device,
             compute_type=self.compute_type,
@@ -82,7 +82,7 @@ class RTranscriber(threading.Thread):
 
         data = task.audio
 
-        segments, info = self._model.transcribe(
+        segments, info = self.model.transcribe(
             audio=io.BytesIO(data),
             # the pathes explored by the beam search
             beam_size=self.beam_size,

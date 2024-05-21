@@ -69,12 +69,18 @@ class RListener(threading.Thread):
                 slicer.start()
 
     def gen_transcriber(self, start=True):
+        model = None
         number = sim.get(self.cfg, 1, "transcriber", "number")
         for i in range(number):
             transcriber = rtranscribe.RTranscriber(
                 task_ctrl=self.task_ctrl,
                 index=i + 1,
-            ).init(force=True)
+            )
+            if model is None:
+                transcriber.init(True)
+                model = transcriber.model
+            else:
+                transcriber.model = model
             self.transcribers.append(transcriber)
             if start:
                 transcriber.start()
