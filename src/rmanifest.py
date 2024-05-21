@@ -80,7 +80,7 @@ class RManifest(threading.Thread):
             return
 
         if self.console.active and self.console.phoneme:
-            print(f"[p] {task.text_transcribe}")
+            print(f"[p] {text}")
 
         if self.barrage.active and self.barrage.phoneme:
             self.task_ctrl.gui_root.add_barrage(
