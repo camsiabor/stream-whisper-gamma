@@ -107,6 +107,19 @@ class RTranscriber(threading.Thread):
             if t.strip().replace('.', ''):
                 yield t
 
+    ignore_list = [
+        ("(", ")"), ("[", "]"), ("*", "*"),
+        ("（", "）"), ("【", "】"), ("［", "］"),
+    ]
+
+    def ignore(self, text):
+        head = text[0]
+        tail = text[-1]
+        for pair in self.ignore_list:
+            if head == pair[0] and tail == pair[1]:
+                return True
+        return False
+
     def run(self):
         self.logger.info(f"running | source language: {self.lang_src}")
         error_count = 0
@@ -126,11 +139,7 @@ class RTranscriber(threading.Thread):
                 if len(text) <= 0:
                     continue
 
-                if (
-                        (text.startswith("(") and text.endswith(")"))
-                        or (text.startswith("[") and text.endswith("]"))
-                        or (text.startswith("*") and text.endswith("*"))
-                ):
+                if self.ignore(text):
                     self.logger.info("ignore text: %s" % text)
                     continue
 
