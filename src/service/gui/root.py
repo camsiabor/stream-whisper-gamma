@@ -217,12 +217,16 @@ class RGuiRoot:
                 key=lambda x: x.timing + x.priority
             )
 
+            # self.update_barrage(nova, legacy)
+
             self.main.after(0, self.update_barrage, nova, legacy)
         finally:
             self.lock.release()
 
     def update_barrage(self, nova: RBarrage, legacy: RBarrage):
         try:
+            self.lock.acquire()
+
             if legacy is not None:
                 legacy.destroy()
 
@@ -263,6 +267,8 @@ class RGuiRoot:
 
         except Exception as ex:
             self.logger.error(ex, exc_info=True, stack_info=True)
+        finally:
+            self.lock.release()
 
     def run_mainloop(self):
         self.main.mainloop()
