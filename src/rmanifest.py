@@ -76,7 +76,7 @@ class RManifest(threading.Thread):
 
         return self
 
-    def show_barrage(self, manifest_type: str, text: str, timing: int, priority: int):
+    def show_barrage(self, manifest_type: str, task: rtask.RTask, text: str, priority: int):
         if not self.barrage.active:
             return
         textattr = self.barrage.textattrs.get(manifest_type, None)
@@ -87,11 +87,11 @@ class RManifest(threading.Thread):
             font_family=textattr.family,
             font_color=textattr.color,
             font_size=textattr.size,
-            timing=timing,
+            timing=task.info.sequence,
             priority=priority,
         )
 
-    def manifest_transcribe(self, task, timing, priority):
+    def manifest_transcribe(self, task, priority):
 
         text = task.text_transcribe
 
@@ -102,9 +102,9 @@ class RManifest(threading.Thread):
             print(f"[s] {text}")
 
         if self.barrage.transcribe:
-            self.show_barrage("transcribe", text, timing, priority)
+            self.show_barrage("transcribe", task, text, priority)
 
-    def manifest_phoneme(self, task, timing, priority):
+    def manifest_phoneme(self, task, priority):
 
         text = task.text_phoneme
 
@@ -115,9 +115,9 @@ class RManifest(threading.Thread):
             print(f"[p] {text}")
 
         if self.barrage.phoneme:
-            self.show_barrage("phoneme", text, timing, priority)
+            self.show_barrage("phoneme", task, text, priority)
 
-    def manifest_translated(self, task, timing, priority):
+    def manifest_translated(self, task, priority):
         text = task.text_translate
         if text is None or len(text) <= 0:
             return
@@ -125,9 +125,9 @@ class RManifest(threading.Thread):
             print(f"[d] {text}")
 
         if self.barrage.translated:
-            self.show_barrage("translated", text, timing, priority)
+            self.show_barrage("translated", task, text, priority)
 
-    def manifest_performance(self, task, timing, priority):
+    def manifest_performance(self, task, priority):
 
         do_console = self.console.active and self.console.performance
         do_barrage = self.barrage.active and self.barrage.performance
@@ -157,7 +157,7 @@ class RManifest(threading.Thread):
             print(perf)
 
         if do_barrage:
-            self.show_barrage("performance", perf, timing, priority)
+            self.show_barrage("performance", task, perf, priority)
 
     def run(self):
         self.logger.info("running")
@@ -188,12 +188,10 @@ class RManifest(threading.Thread):
                     max_len=16 if lang_des_east_asian else 10,
                 )
 
-                timing = task.info.time_get("slice", True)
-
-                self.manifest_transcribe(task, timing, 1)
-                self.manifest_phoneme(task, timing, 2)
-                self.manifest_translated(task, timing, 3)
-                self.manifest_performance(task, timing, 4)
+                self.manifest_transcribe(task, 1)
+                self.manifest_phoneme(task, 2)
+                self.manifest_translated(task, 3)
+                self.manifest_performance(task, 4)
 
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)

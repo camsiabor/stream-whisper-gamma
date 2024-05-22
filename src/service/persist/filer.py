@@ -52,6 +52,11 @@ class RPersistToFile(threading.Thread):
     def push(self, task: rtask.RTask):
         try:
             self.lock.acquire()
+            sim.Collection.insort_ex(
+                self.buffer,
+                task,
+                key=lambda item: item.info.times["create"]
+            )
             self.buffer.append(task)
         finally:
             self.lock.release()

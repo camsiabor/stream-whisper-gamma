@@ -10,6 +10,7 @@ import redis
 
 from src.service.gui.root import RGuiRoot
 
+NANO_TO_MILLI = 1_000_000
 
 class RBot:
     def __init__(
@@ -46,18 +47,19 @@ class RParam:
 class RInfo:
     times = {}
     elapsed = {}
+    sequence = 0
 
     def __init__(self):
         self.time_set("create")
         # self.time_set_as_str("create_str")
 
     def time_set(self, name: str):
-        self.times[name] = round(time.time_ns() / 1_000_000)
+        self.times[name] = time.time_ns() // NANO_TO_MILLI
 
     def time_elapsed(self, name: str, src: int = 0):
         if src <= 0:
             src = time.time_ns()
-        self.elapsed[name] = round(src / 1_000_000 - self.times[name])
+        self.elapsed[name] = round(src // NANO_TO_MILLI - self.times[name])
 
     def time_set_as_str(self, name: str):
         self.times[name] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -82,6 +84,11 @@ class RInfo:
             self.elapsed[store] = diff
 
         return diff
+
+    def sequence_set(self, sequence: int = 0):
+        if sequence <= 0:
+            sequence = time.time_ns() // NANO_TO_MILLI
+        self.sequence = sequence
 
 
 class RCommand:

@@ -137,6 +137,7 @@ class RSlicer(threading.Thread):
 
                 if task_head is None:
                     task.info.time_set("slice")
+                    task.info.sequence_set()
                     task_head = task
 
                 if self.denoise_ratio_of_fragment > 0:
