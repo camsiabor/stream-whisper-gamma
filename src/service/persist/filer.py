@@ -68,13 +68,15 @@ class RPersistToFile(threading.Thread):
         lang_src = task.param.lang_src
         lang_des = task.param.lang_des
 
-        if len(task.text_transcribe) > 0:
+        manifest = task.param.manifest
+
+        if manifest.transcribe and len(task.text_transcribe) > 0:
             self.file.write(f"[[{lang_src}]] {task.text_transcribe}\n")
 
-        if len(task.text_phoneme) > 0:
+        if manifest.phoneme and len(task.text_phoneme) > 0:
             self.file.write(f"[[**]] {task.text_phoneme}\n")
 
-        if len(task.text_translate) > 0:
+        if manifest.translated and len(task.text_translate) > 0:
             self.file.write(f"[[{lang_des}]] {task.text_translate}\n")
 
         self.file.write("\n")
