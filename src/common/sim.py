@@ -103,9 +103,9 @@ class Collection:
 class FileIO:
 
     @staticmethod
-    def open(file_path, encoding='utf-8', mkdir=True):
+    def fopen(file_path, mode: str = 'rw', encoding: str = 'utf-8', mkdir=True):
         if mkdir:
             parent_directory = os.path.dirname(file_path)
             os.makedirs(parent_directory, exist_ok=True)
-        file = open(file_path, 'a', encoding=encoding)
+        file = open(file_path, mode=mode, encoding=encoding)
         return file
