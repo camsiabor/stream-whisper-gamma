@@ -1,9 +1,10 @@
 import logging
 import threading
-from typing import Union
+from typing import Dict
 
 from src import rtask
 from src.common import sim
+from src.service.gui.share import RTextAttr
 
 
 class RManifestUnit:
@@ -12,20 +13,21 @@ class RManifestUnit:
     transcribe: bool = True
     translated: bool = True
     performance: bool = False
-    font: Union[str, any] = {}
+    text: Dict[str, any] = {}
+    textattrs: Dict[str, RTextAttr] = {}
 
-    def set(
+    def init(
             self,
             active: bool = False,
             phoneme: bool = False,
             transcribe: bool = True,
             translated: bool = True,
             performance: bool = False,
-            font=None
+            text=None
     ) -> 'RManifestUnit':
-        if font is None:
-            font = {}
-        self.font = font
+        if text is None:
+            text = {}
+        self.text = text
         self.active = active
         self.phoneme = phoneme
         self.transcribe = transcribe
@@ -55,21 +57,39 @@ class RManifest(threading.Thread):
         cfg_manifest = self.task_ctrl.cfg.get("manifest", {})
         cfg_console = sim.getv(cfg_manifest, {}, "console")
         cfg_barrage = sim.getv(cfg_manifest, {}, "barrage")
-        self.console.set(**cfg_console)
-        self.barrage.set(**cfg_barrage)
+        self.console.init(**cfg_console)
+        self.barrage.init(**cfg_barrage)
 
-        font_cfg = sim.getv(cfg_manifest, {}, "fonts")
-        font_default = sim.getv(font_cfg, {}, "default")
+        textattr_default = None
+        for manifest_type in ["default", "transcribe", "phoneme", "translated", "performance"]:
+            setting = self.barrage.text.get(manifest_type, None)
+            if setting is None:
+                continue
+            # noinspection PyArgumentList
+            textattr = RTextAttr(textattr_default).init(**setting)
+            if manifest_type == "default":
+                textattr_default = textattr
+            self.barrage.textattrs[manifest_type] = textattr
 
-        font_default["family"] = sim.getv(font_default, "Consolas", "family")
-        font_default["size"] = sim.getv(font_default, 16, "size")
-        font_default["color"] = sim.getv(font_default, "#FFFFFF", "color")
-        font_default["background"] = sim.getv(font_default, "#000000", "background")
-
-
-
+        if textattr_default is None:
+            self.barrage.textattrs["default"] = RTextAttr()
 
         return self
+
+    def show_barrage(self, manifest_type: str, text: str, timing: int, priority: int):
+        if not (self.barrage.active and self.barrage.transcribe):
+            return
+        textattr = self.barrage.textattrs.get(manifest_type, None)
+        if textattr is None:
+            textattr = self.barrage.textattrs.get("default", None)
+        self.task_ctrl.gui_root.add_barrage(
+            text=text,
+            font_family=textattr.family,
+            font_color=textattr.color,
+            font_size=textattr.size,
+            timing=timing,
+            priority=priority,
+        )
 
     def manifest_transcribe(self, task, timing, priority):
 
@@ -81,14 +101,7 @@ class RManifest(threading.Thread):
         if self.console.active and self.console.transcribe:
             print(f"[s] {text}")
 
-        if self.barrage.active and self.barrage.transcribe:
-            self.task_ctrl.gui_root.add_barrage(
-                text=text,
-                font_color="#FFFFFF",
-                font_size_delta=-2,
-                timing=timing,
-                priority=priority,
-            )
+        self.show_barrage("transcribe", text, timing, priority)
 
     def manifest_phoneme(self, task, timing, priority):
 
@@ -100,28 +113,16 @@ class RManifest(threading.Thread):
         if self.console.active and self.console.phoneme:
             print(f"[p] {text}")
 
-        if self.barrage.active and self.barrage.phoneme:
-            self.task_ctrl.gui_root.add_barrage(
-                text=text,
-                font_color="#88CCEE",
-                font_size_delta=-2,
-                timing=timing,
-                priority=priority,
-            )
+        self.show_barrage("phoneme", text, timing, priority)
 
-    def manifest_translate(self, task, timing, priority):
+    def manifest_translated(self, task, timing, priority):
         text = task.text_translate
         if text is None or len(text) <= 0:
             return
         if self.console.active and self.console.translated:
             print(f"[d] {text}")
 
-        if self.barrage.active and self.barrage.translated:
-            self.task_ctrl.gui_root.add_barrage(
-                text=text,
-                timing=timing,
-                priority=priority,
-            )
+        self.show_barrage("translated", text, timing, priority)
 
     def manifest_performance(self, task, timing, priority):
 
@@ -152,14 +153,7 @@ class RManifest(threading.Thread):
         if do_console:
             print(perf)
 
-        if do_barrage:
-            self.task_ctrl.gui_root.add_barrage(
-                text=perf,
-                font_color="#FFFFFF",
-                font_size_delta=-5,
-                timing=timing,
-                priority=priority,
-            )
+        self.show_barrage("performance", perf, timing, priority)
 
     def run(self):
         self.logger.info("running")
@@ -194,7 +188,7 @@ class RManifest(threading.Thread):
 
                 self.manifest_transcribe(task, timing, 1)
                 self.manifest_phoneme(task, timing, 2)
-                self.manifest_translate(task, timing, 3)
+                self.manifest_translated(task, timing, 3)
                 self.manifest_performance(task, timing, 4)
 
             except Exception as ex:

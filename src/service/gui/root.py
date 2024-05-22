@@ -163,6 +163,7 @@ class RGuiRoot:
             self,
             text: str,
             font: Font = None,
+            font_size: int = 0,
             font_size_delta: int = 0,
             font_family='',
             font_color: str = '',
@@ -188,9 +189,12 @@ class RGuiRoot:
         if font is not None:
             nova.font = font
 
+        if font_size >= 0:
+            nova.font.config(size=font_size)
+
         if font_size_delta != 0:
-            font_size = nova.font.cget("size")
-            nova.font.config(size=font_size + font_size_delta)
+            origin_size = nova.font.cget("size")
+            nova.font.config(size=origin_size + font_size_delta)
 
         if font_family is not None and len(font_family) > 0:
             nova.font.config(family=font_family)
