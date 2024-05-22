@@ -23,14 +23,16 @@ transcriber:
   # model_size: "arc-r/faster-whisper-large-v2-mix-jp"
   local_files_only: false
   device: "cuda"
-  lang_src: "japanese"
+  lang_src: "english"
+  # lang_src: "japanese"
   beam_size: 7
-  prompt: "翻訳する"
+  prompt: "transcribe english"
+  # prompt: "翻訳する"
 
 
 translator:
   number: 3
-  lang_des: "en"
+  lang_des: "zh"
   phoneme:
     convert: true
     translate: false
@@ -50,11 +52,16 @@ translator:
 
 
 manifest:
-  console:
+  file:
     active: true
     phoneme: true
     transcribe: true
     translated: true
+  console:
+    active: true
+    phoneme: false
+    transcribe: false
+    translated: false
     performance: true
   barrage:
     active: true
