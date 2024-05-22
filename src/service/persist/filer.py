@@ -89,6 +89,7 @@ class RPersistToFile(threading.Thread):
             if len(self.buffer) <= 0:
                 return
             array = list(self.buffer)
+            self.buffer.clear()
         finally:
             self.lock.release()
 
