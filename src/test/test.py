@@ -36,8 +36,8 @@ def test_poe():
     with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
 
-    token = sim.get(cfg, {}, "poe", "token")
-    bot_id = sim.get(cfg, "", "poe", "translate", "all").lower()
+    token = sim.getv(cfg, {}, "poe", "token")
+    bot_id = sim.getv(cfg, "", "poe", "translate", "all").lower()
 
     poe = poe_api_wrapper.PoeApi(cookie=token)
 

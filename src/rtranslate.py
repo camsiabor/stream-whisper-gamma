@@ -62,20 +62,20 @@ class RTranslator(threading.Thread):
         pass
 
     def configure_phoneme(self, cfg):
-        phoneme_cfg = sim.get(cfg, {}, "translator", "phoneme")
-        convert = sim.get(phoneme_cfg, False, "convert")
+        phoneme_cfg = sim.getv(cfg, {}, "translator", "phoneme")
+        convert = sim.getv(phoneme_cfg, False, "convert")
         self.phoneme = {
             "convert": convert,
-            "translate": sim.get(phoneme_cfg, False, "translate"),
+            "translate": sim.getv(phoneme_cfg, False, "translate"),
         }
         if convert:
             self.phoneme_ja = cutlet.Cutlet()
         pass
 
     def configure_cache_redis(self, cfg):
-        cache_redis_cfg = sim.get(cfg, {}, "translator", "cache_redis")
-        fetch = sim.get(cache_redis_cfg, False, "fetch")
-        persist = sim.get(cache_redis_cfg, False, "persist")
+        cache_redis_cfg = sim.getv(cfg, {}, "translator", "cache_redis")
+        fetch = sim.getv(cache_redis_cfg, False, "fetch")
+        persist = sim.getv(cache_redis_cfg, False, "persist")
         if (fetch <= 0) and (persist <= 0):
             return
         if self.task_ctrl.redis is None:
@@ -88,21 +88,21 @@ class RTranslator(threading.Thread):
         pass
 
     def configure_google(self, cfg):
-        active = sim.get(cfg, False, "translator", "agent_google", "active")
+        active = sim.getv(cfg, False, "translator", "agent_google", "active")
         if not active:
             return
         self.agent_google = google_trans.GoogleTransCtrl(self.task_ctrl.cfg)
         self.agent_google.configure()
 
     def configure_poe(self, cfg):
-        active = sim.get(cfg, False, "translator", "agent_poe", "active")
+        active = sim.getv(cfg, False, "translator", "agent_poe", "active")
         if not active:
             return
         self.agent_poe = poe_ctrl.PoeCtrl(self.task_ctrl.cfg)
         self.agent_poe.configure("translate")
 
     def configure_ollama(self, cfg):
-        active = sim.get(cfg, False, "translator", "agent_ollama", "active")
+        active = sim.getv(cfg, False, "translator", "agent_ollama", "active")
         if not active:
             return
         self.agent_ollama = ollama_ctrl.OllamaCtrl(self.task_ctrl.cfg)

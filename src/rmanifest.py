@@ -1,5 +1,6 @@
 import logging
 import threading
+from typing import Union
 
 from src import rtask
 from src.common import sim
@@ -7,10 +8,11 @@ from src.common import sim
 
 class RManifestUnit:
     active: bool = False
-    phoneme: bool = False,
-    transcribe: bool = True,
-    translated: bool = True,
-    performance: bool = False,
+    phoneme: bool = False
+    transcribe: bool = True
+    translated: bool = True
+    performance: bool = False
+    font: Union[str, any] = {}
 
     def set(
             self,
@@ -18,8 +20,12 @@ class RManifestUnit:
             phoneme: bool = False,
             transcribe: bool = True,
             translated: bool = True,
-            performance: bool = False
+            performance: bool = False,
+            font=None
     ) -> 'RManifestUnit':
+        if font is None:
+            font = {}
+        self.font = font
         self.active = active
         self.phoneme = phoneme
         self.transcribe = transcribe
@@ -46,11 +52,23 @@ class RManifest(threading.Thread):
         self.configure()
 
     def configure(self) -> 'RManifest':
-        cfg = self.task_ctrl.cfg.get("manifest", {})
-        cfg_console = sim.get(cfg, {}, "console")
-        cfg_barrage = sim.get(cfg, {}, "barrage")
+        cfg_manifest = self.task_ctrl.cfg.get("manifest", {})
+        cfg_console = sim.getv(cfg_manifest, {}, "console")
+        cfg_barrage = sim.getv(cfg_manifest, {}, "barrage")
         self.console.set(**cfg_console)
         self.barrage.set(**cfg_barrage)
+
+        font_cfg = sim.getv(cfg_manifest, {}, "fonts")
+        font_default = sim.getv(font_cfg, {}, "default")
+
+        font_default["family"] = sim.getv(font_default, "Consolas", "family")
+        font_default["size"] = sim.getv(font_default, 16, "size")
+        font_default["color"] = sim.getv(font_default, "#FFFFFF", "color")
+        font_default["background"] = sim.getv(font_default, "#000000", "background")
+
+
+
+
         return self
 
     def manifest_transcribe(self, task, timing, priority):

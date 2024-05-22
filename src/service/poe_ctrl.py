@@ -16,16 +16,16 @@ class PoeCtrl:
         self.logger = logging.getLogger('poe')
 
     def configure(self, domain) -> 'PoeCtrl':
-        poe_cfg = sim.get(self.cfg, {}, "poe")
-        self.active = sim.get(poe_cfg, False, "active")
+        poe_cfg = sim.getv(self.cfg, {}, "poe")
+        self.active = sim.getv(poe_cfg, False, "active")
         if not self.active:
             return self
 
-        token = sim.get(poe_cfg, None, "token")
+        token = sim.getv(poe_cfg, None, "token")
         if token is None:
             raise Exception("poe token not found !")
 
-        mapping = sim.get(poe_cfg, None, domain)
+        mapping = sim.getv(poe_cfg, None, domain)
         if mapping is None:
             raise Exception(f"poe {domain} mapping not found !")
 
@@ -50,7 +50,7 @@ class PoeCtrl:
             bot=bot.id,
             count=1,
         )
-        data = sim.get(response, None, "data", bot.id)
+        data = sim.getv(response, None, "data", bot.id)
         if data is None or len(data) <= 0:
             if not create:
                 return None

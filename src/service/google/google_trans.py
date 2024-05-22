@@ -13,12 +13,12 @@ class GoogleTransCtrl:
         self.logger = logging.getLogger('google-trans')
 
     def configure(self) -> 'GoogleTransCtrl':
-        google_cfg = sim.get(self.cfg, {}, "translator", "agent_google")
-        self.active = sim.get(google_cfg, False, "active")
+        google_cfg = sim.getv(self.cfg, {}, "translator", "agent_google")
+        self.active = sim.getv(google_cfg, False, "active")
         if not self.active:
             return self
-        domain = sim.get(google_cfg, "hk", "domain")
-        timeout = sim.get(google_cfg, 5, "timeout")
+        domain = sim.getv(google_cfg, "hk", "domain")
+        timeout = sim.getv(google_cfg, 5, "timeout")
         self.agent = GoogleTranslator(
             url_suffix=domain,
             timeout=timeout,

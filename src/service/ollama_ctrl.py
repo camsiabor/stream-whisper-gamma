@@ -18,15 +18,15 @@ class OllamaCtrl:
         self.logger = logging.getLogger('ollama')
 
     def configure(self, domain) -> 'OllamaCtrl':
-        ollama_cfg = sim.get(self.cfg, {}, "ollama")
-        self.active = sim.get(ollama_cfg, False, "active")
+        ollama_cfg = sim.getv(self.cfg, {}, "ollama")
+        self.active = sim.getv(ollama_cfg, False, "active")
         if not self.active:
             return self
 
-        self.host = url = sim.get(ollama_cfg, None, "host")
+        self.host = url = sim.getv(ollama_cfg, None, "host")
         if url is None or len(url) <= 0:
             raise Exception("ollama host not found !")
-        mapping = sim.get(ollama_cfg, None, domain)
+        mapping = sim.getv(ollama_cfg, None, domain)
         if mapping is None:
             raise Exception(f"ollama {domain} mapping not found !")
 
@@ -105,5 +105,5 @@ class OllamaCtrl:
         ):
             result += part['message'].get('content', '')
         """
-        # return sim.get(result, '', 'message', 'content')
-        return sim.get(result, '', 'response')
+        # return sim.getv(result, '', 'message', 'content')
+        return sim.getv(result, '', 'response')

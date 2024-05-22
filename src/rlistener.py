@@ -39,7 +39,7 @@ class RListener(threading.Thread):
 
     def configure(self):
         cfg_me = self.cfg.get("listener", {})
-        redis_active = sim.get(cfg_me, False, "redis")
+        redis_active = sim.getv(cfg_me, False, "redis")
         if not redis_active:
             return
         cfg_redis = self.cfg.get("redis", {})
@@ -58,7 +58,7 @@ class RListener(threading.Thread):
             recorder.start()
 
     def gen_slicer(self, start=True):
-        number = sim.get(self.cfg, 1, "slicer", "number")
+        number = sim.getv(self.cfg, 1, "slicer", "number")
         for i in range(number):
             slicer = rslice.RSlicer(
                 task_ctrl=self.task_ctrl,
@@ -70,7 +70,7 @@ class RListener(threading.Thread):
 
     def gen_transcriber(self, start=True):
         model = None
-        number = sim.get(self.cfg, 1, "transcriber", "number")
+        number = sim.getv(self.cfg, 1, "transcriber", "number")
         for i in range(number):
             transcriber = rtranscribe.RTranscriber(
                 task_ctrl=self.task_ctrl,
@@ -86,7 +86,7 @@ class RListener(threading.Thread):
                 transcriber.start()
 
     def gen_translator(self, start=True):
-        number = sim.get(self.cfg, 1, "translator", "number")
+        number = sim.getv(self.cfg, 1, "translator", "number")
         for i in range(number):
             translator = rtranslate.RTranslator(
                 task_ctrl=self.task_ctrl,
@@ -97,7 +97,7 @@ class RListener(threading.Thread):
                 translator.start()
 
     def gen_renderer(self, start=True):
-        number = sim.get(self.cfg, 1, "renderer", "number")
+        number = sim.getv(self.cfg, 1, "renderer", "number")
         for i in range(number):
             renderer = rmanifest.RManifest(
                 task_ctrl=self.task_ctrl,

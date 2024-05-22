@@ -174,7 +174,7 @@ class RGuiRoot:
         if text is None or len(text) <= 0:
             return
 
-        cfg_barrage = sim.get(self.cfg, {}, "gui", "barrage")
+        cfg_barrage = sim.getv(self.cfg, {}, "gui", "barrage")
         self.logger.debug(f"adding barrage: {text}")
 
         nova = RBarrage(

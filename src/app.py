@@ -13,7 +13,7 @@ def init_logger():
     log_config_path = "../config/log.yaml"
     with open(log_config_path, mode='r', encoding="utf-8") as log_config_file:
         config = yaml.safe_load(log_config_file)
-        log_path = sim.get(config, "", "handlers", "file_handler", "filename")
+        log_path = sim.getv(config, "", "handlers", "file_handler", "filename")
         if not os.path.exists(log_path):
             log_dir_path = os.path.dirname(log_path)
             os.makedirs(log_dir_path, exist_ok=True)

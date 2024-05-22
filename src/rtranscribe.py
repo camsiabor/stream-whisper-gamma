@@ -48,15 +48,15 @@ class RTranscriber(threading.Thread):
             """
 
     def configure(self) -> 'RTranscriber':
-        cfg = sim.get(self.task_ctrl.cfg, {}, "transcriber")
-        self.lang_src = sim.get(cfg, None, "lang_src")
-        self.beam_size = sim.get(cfg, 5, "beam_size")
-        self.model_size = sim.get(cfg, "large-v3", "model_size")
-        self.download_root = sim.get(cfg, "../models", "download_root")
-        self.local_files_only = sim.get(cfg, True, "local_files_only")
-        self.device = sim.get(cfg, "cuda", "device")
-        self.compute_type = sim.get(cfg, "default", "compute_type")
-        self.prompt = sim.get(cfg, "transcriber here", "prompt")
+        cfg = sim.getv(self.task_ctrl.cfg, {}, "transcriber")
+        self.lang_src = sim.getv(cfg, None, "lang_src")
+        self.beam_size = sim.getv(cfg, 5, "beam_size")
+        self.model_size = sim.getv(cfg, "large-v3", "model_size")
+        self.download_root = sim.getv(cfg, "../models", "download_root")
+        self.local_files_only = sim.getv(cfg, True, "local_files_only")
+        self.device = sim.getv(cfg, "cuda", "device")
+        self.compute_type = sim.getv(cfg, "default", "compute_type")
+        self.prompt = sim.getv(cfg, "transcriber here", "prompt")
         return self
 
     def init(self, force: bool = False) -> 'RTranscriber':
