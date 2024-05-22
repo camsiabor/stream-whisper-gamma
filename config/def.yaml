@@ -1,3 +1,4 @@
+
 listener:
   redis: true
 
@@ -7,7 +8,7 @@ recorder:
   flush_interval: 0
 
 slicer:
-  buffer_len: 100
+  buffer_len: 1000
   speech_len: 10
   non_speech_len: 1
   denoise_ratio_of_fragment: 0
@@ -15,7 +16,7 @@ slicer:
   slice_mode: vad
 
 transcriber:
-  number: 2
+  number: 3
   # model_size: "Systran/faster-whisper-large-v3"
   model_size: "zh-plus/faster-whisper-large-v2-japanese-5k-steps"
   # model_size: "JhonVanced/whisper-large-v3-japanese-4k-steps-ct2"
@@ -36,8 +37,8 @@ translator:
   agent_pass:
     active: false
   cache_redis:
-    fetch: 6
-    persist: 6
+    fetch: 10
+    persist: 10
   agent_google:
     active: true
     domain: "hk"
@@ -61,6 +62,24 @@ manifest:
     transcribe: true
     translated: true
     performance: false
+    text:
+      default:
+        size: 13
+        color: "#FFFFFF"
+      transcribe:
+        size: -2
+        color: "#FFFFFF"
+      phoneme:
+        size: -2
+        color: "#88CCEE"
+      translated:
+        size: 0
+        color: "#FFA500"
+      performance:
+        size: -4
+        color: "#FFFFFF"
+
+
 
 gui:
   active: true
@@ -82,13 +101,13 @@ gui:
 
 
 poe:
-  active: false
+  active: true
   token:
-    b: ""
-    lat: ""
+    b:
+    lat:
   translate:
     all:
-      id: ""
+      id:
       prompt_type: ""
 
 
