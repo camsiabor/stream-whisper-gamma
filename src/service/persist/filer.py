@@ -44,8 +44,10 @@ class RPersistToFile(threading.Thread):
             self.filename = datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + ".txt"
         self.filepath = f"{self.output_dir}/{self.filename}"
         self.file = sim.FileIO.fopen(self.filepath, "a")
+        self.do_run = True
 
     def close(self):
+        self.do_run = False
         if self.file is not None:
             self.file.close()
 
@@ -61,12 +63,35 @@ class RPersistToFile(threading.Thread):
         finally:
             self.lock.release()
 
+    def flush_one(self, task: rtask.RTask):
+
+        lang_src = task.param.lang_src
+        lang_des = task.param.lang_des
+
+        if len(task.text_transcribe) > 0:
+            self.file.write(f"[[{lang_src}]] {task.text_transcribe}\n")
+
+        if len(task.text_phoneme) > 0:
+            self.file.write(f"[[**]] {task.text_phoneme}\n")
+
+        if len(task.text_translate) > 0:
+            self.file.write(f"[[{lang_des}]] {task.text_translate}\n")
+
+        self.file.write("\n")
+        self.file.flush()
+
     def flush(self):
+        array = None
         try:
             self.lock.acquire()
-
+            if len(self.buffer) <= 0:
+                return
+            array = list(self.buffer)
         finally:
             self.lock.release()
+
+        for task in array:
+            self.flush_one(task)
 
     def run(self):
         try:

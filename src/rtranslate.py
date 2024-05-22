@@ -268,6 +268,8 @@ class RTranslator(threading.Thread):
                 task.text_translate = translated
                 task.info.time_set("translate")
                 task.info.time_diff("transcribe", "translate", store="translate")
+                task.param.lang_src = task.text_info.language
+                task.param.lang_des = self.lang_des
                 self.task_ctrl.queue_manifest.put(task)
             except Exception:
                 traceback.print_exc()

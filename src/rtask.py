@@ -5,10 +5,12 @@ import os
 import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Dict, Union
 
 import redis
 
 from src.service.gui.root import RGuiRoot
+from src.service.gui.share import RTextAttr
 
 NANO_TO_MILLI = 1_000_000
 
@@ -42,6 +44,8 @@ class RParam:
     sample_rate: int
     sample_width: int
     sample_channels: int
+
+    manifest: Union['RManifestUnit', any, None] = None
 
 
 class RInfo:
@@ -102,6 +106,38 @@ class RCommand:
         self.action = action
         self.params = params
         self.extra = extra
+
+
+class RManifestUnit:
+    path: str = ""
+    active: bool = False
+    phoneme: bool = False
+    transcribe: bool = True
+    translated: bool = True
+    performance: bool = False
+    text: Dict[str, any] = {}
+    textattrs: Dict[str, RTextAttr] = {}
+
+    def init(
+            self,
+            active: bool = False,
+            phoneme: bool = False,
+            transcribe: bool = True,
+            translated: bool = True,
+            performance: bool = False,
+            path: str = "",
+            text=None
+    ) -> 'RManifestUnit':
+        if text is None:
+            text = {}
+        self.path = path
+        self.text = text
+        self.active = active
+        self.phoneme = phoneme
+        self.transcribe = transcribe
+        self.translated = translated
+        self.performance = performance
+        return self
 
 
 class RTask:

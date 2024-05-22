@@ -1,43 +1,16 @@
 import logging
 import threading
-from typing import Dict
 
 from src import rtask
 from src.common import sim
+from src.rtask import RManifestUnit
 from src.service.gui.share import RTextAttr
-
-
-class RManifestUnit:
-    active: bool = False
-    phoneme: bool = False
-    transcribe: bool = True
-    translated: bool = True
-    performance: bool = False
-    text: Dict[str, any] = {}
-    textattrs: Dict[str, RTextAttr] = {}
-
-    def init(
-            self,
-            active: bool = False,
-            phoneme: bool = False,
-            transcribe: bool = True,
-            translated: bool = True,
-            performance: bool = False,
-            text=None
-    ) -> 'RManifestUnit':
-        if text is None:
-            text = {}
-        self.text = text
-        self.active = active
-        self.phoneme = phoneme
-        self.transcribe = transcribe
-        self.translated = translated
-        self.performance = performance
-        return self
+from src.service.persist.filer import RPersistToFile
 
 
 class RManifest(threading.Thread):
 
+    # noinspection PyTypeChecker
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
@@ -51,14 +24,18 @@ class RManifest(threading.Thread):
         self.logger = logging.getLogger(name='manifest')
         self.console = RManifestUnit()
         self.barrage = RManifestUnit()
+        self.file = RManifestUnit()
+        self.file_persister: RPersistToFile = None
         self.configure()
 
     def configure(self) -> 'RManifest':
         cfg_manifest = self.task_ctrl.cfg.get("manifest", {})
         cfg_console = sim.getv(cfg_manifest, {}, "console")
         cfg_barrage = sim.getv(cfg_manifest, {}, "barrage")
+        cfg_file = sim.getv(cfg_manifest, {}, "file")
         self.console.init(**cfg_console)
         self.barrage.init(**cfg_barrage)
+        self.file.init(**cfg_file)
 
         textattr_default = None
         for manifest_type in ["default", "transcribe", "phoneme", "translated", "performance"]:
@@ -159,9 +136,33 @@ class RManifest(threading.Thread):
         if do_barrage:
             self.show_barrage("performance", task, perf, priority)
 
+    def persist_init(self):
+        try:
+            if self.file.active:
+                self.file_persister = RPersistToFile(
+                    name="manifest",
+                    filename=self.file.path,
+                )
+                self.file_persister.init()
+                self.file_persister.start()
+            return True
+        except Exception as ex:
+            self.logger.error(ex, exc_info=True, stack_info=True)
+            return False
+
+    def persist(self, task: rtask.RTask):
+        if self.file_persister is not None:
+            task.param.manifest = self.file
+            self.file_persister.push(task)
+        pass
+
     def run(self):
         self.logger.info("running")
         error_count = 0
+
+        if not self.persist_init():
+            return
+
         while self.do_run:
             try:
                 task: rtask.RTask = self.task_ctrl.queue_manifest.get()
@@ -193,11 +194,16 @@ class RManifest(threading.Thread):
                 self.manifest_translated(task, 3)
                 self.manifest_performance(task, 4)
 
+                self.persist(task)
+
             except Exception as ex:
                 self.logger.error(ex, exc_info=True, stack_info=True)
                 if error_count > 3:
                     self.logger.warning("error_count > 3, breaking...")
                     break
                 error_count += 1
+
+        if self.file_persister is not None:
+            self.file_persister.close()
 
         self.logger.info("end")
