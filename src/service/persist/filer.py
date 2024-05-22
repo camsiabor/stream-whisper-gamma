@@ -41,7 +41,7 @@ class RPersistToFile(threading.Thread):
 
     def init(self):
         if len(self.filename) <= 0:
-            self.filename = datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + ".txt"
+            self.filename = datetime.datetime.now().strftime('%Y%m%d/%H%M%S') + ".txt"
         self.filepath = f"{self.output_dir}/{self.filename}"
         self.file = sim.FileIO.fopen(self.filepath, "a")
         self.do_run = True
@@ -80,7 +80,6 @@ class RPersistToFile(threading.Thread):
             self.file.write(f"[[{lang_des}]] {task.text_translate}\n")
 
         self.file.write("\n")
-        self.file.flush()
 
     def flush(self):
         array = None
@@ -95,6 +94,7 @@ class RPersistToFile(threading.Thread):
 
         for task in array:
             self.flush_one(task)
+        self.file.flush()
 
     def run(self):
         try:
