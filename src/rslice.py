@@ -18,12 +18,9 @@ class RSlicer(threading.Thread):
     def __init__(
             self,
             task_ctrl: rtask.RTaskControl,
-            index: int = 1,
     ):
         super().__init__()
         self.task_ctrl = task_ctrl
-        self.index = index
-
 
         self.do_run = True
 
@@ -41,7 +38,7 @@ class RSlicer(threading.Thread):
 
         self.__frames: typing.List[bytes] = []
 
-        self.logger = logging.getLogger(f'slicer-{self.index}')
+        self.logger = logging.getLogger(f'slicer')
 
         self.configure()
 

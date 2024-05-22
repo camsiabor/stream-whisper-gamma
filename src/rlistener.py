@@ -10,8 +10,8 @@ from src.service.gui.root import RGuiRoot
 
 
 class RListener(threading.Thread):
-    recorders = []
-    slicers = []
+    recorder: rrecord.Recorder = None
+    slicer: rslice.RSlicer = None
     transcribers = []
     translators = []
     renderers = []
@@ -49,24 +49,19 @@ class RListener(threading.Thread):
         self.logger.info(f"redis client - {host}:{port}", )
 
     def gen_recorder(self, start=True):
-        recorder = rrecord.Recorder(
+        self.recorder = rrecord.Recorder(
             p_audio=self.py_audio,
             task_ctrl=self.task_ctrl,
         )
-        self.recorders.append(recorder)
         if start:
-            recorder.start()
+            self.recorder.start()
 
     def gen_slicer(self, start=True):
-        number = sim.getv(self.cfg, 1, "slicer", "number")
-        for i in range(number):
-            slicer = rslice.RSlicer(
-                task_ctrl=self.task_ctrl,
-                index=i + 1,
-            )
-            self.slicers.append(slicer)
-            if start:
-                slicer.start()
+        self.slicer = rslice.RSlicer(
+            task_ctrl=self.task_ctrl,
+        )
+        if start:
+            self.slicer.start()
 
     def gen_transcriber(self, start=True):
         model = None
@@ -96,7 +91,7 @@ class RListener(threading.Thread):
             if start:
                 translator.start()
 
-    def gen_renderer(self, start=True):
+    def gen_manifest(self, start=True):
         number = sim.getv(self.cfg, 1, "renderer", "number")
         for i in range(number):
             renderer = rmanifest.RManifest(
@@ -111,8 +106,14 @@ class RListener(threading.Thread):
         self.lock.acquire()
         try:
             self.task_ctrl.queue_command.put("exit")
-            self.recorders.clear()
-            self.slicers.clear()
+            self.recorder.do_run = False
+            self.slicer.do_run = False
+            for transcriber in self.transcribers:
+                transcriber.do_run = False
+            for translator in self.translators:
+                translator.do_run = False
+            for renderer in self.renderers:
+                renderer.do_run = False
             self.transcribers.clear()
             self.translators.clear()
             self.renderers.clear()
@@ -125,7 +126,7 @@ class RListener(threading.Thread):
 
             self.lock.acquire()
             try:
-                self.gen_renderer()
+                self.gen_manifest()
                 self.gen_translator()
                 self.gen_transcriber()
                 self.gen_slicer()
