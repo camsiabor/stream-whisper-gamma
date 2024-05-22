@@ -217,7 +217,7 @@ class RGuiRoot:
             if barrage_count >= self.barrage_max:
                 legacy = self.barrages.popleft()
 
-            sim.insort_ex(
+            sim.Collection.insort_ex(
                 container=self.barrages,
                 unit=nova,
                 right=True,

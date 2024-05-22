@@ -178,12 +178,12 @@ class RManifest(threading.Thread):
                 lang_des = task.param.lang_des
                 lang_des_east_asian = lang_des == "zh" or lang_des == "ja" or lang_des == "ko"
 
-                task.text_transcribe = sim.insert_newline_per(
+                task.text_transcribe = sim.Text.insert_newline_per(
                     text=task.text_transcribe.strip(),
                     max_len=16 if lang_src_east_asian else 10,
                 )
 
-                task.text_translate = sim.insert_newline_per(
+                task.text_translate = sim.Text.insert_newline_per(
                     text=task.text_translate.strip(),
                     max_len=16 if lang_des_east_asian else 10,
                 )

@@ -10,7 +10,7 @@ from src.common import sim
 
 
 def init_logger():
-    log_config_path = "../config/log.yaml"
+    log_config_path = "./config/log.yaml"
     with open(log_config_path, mode='r', encoding="utf-8") as log_config_file:
         config = yaml.safe_load(log_config_file)
         log_path = sim.getv(config, "", "handlers", "file_handler", "filename")
@@ -25,9 +25,10 @@ def init_logger():
 
 
 def load_config():
-    config_path = "../config/def.yaml"
-    if os.path.exists("../config/cfg.yaml"):
-        config_path = "../config/cfg.yaml"
+    cwd = os.getcwd()
+    config_path = "./config/def.yaml"
+    if os.path.exists("./config/cfg.yaml"):
+        config_path = "./config/cfg.yaml"
 
     with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
@@ -38,21 +39,10 @@ def init_env():
     # os.environ["PYTHONIOENCODING"] = "utf-8"
     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-    """
-    import sys
-    import codecs
-    if sys.stdout.encoding != 'cp850':
-        sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
-    if sys.stderr.encoding != 'cp850':
-        sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
-
-    import subprocess
-    # Run the 'chcp 65001' command as a subprocess
-    subprocess.run('chcp 65001', shell=True)
-    """
-
 
 if __name__ == "__main__":
+
+    print(f"[app] working directory {os.getcwd()}")
 
     init_env()
     init_logger()

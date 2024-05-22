@@ -1,6 +1,7 @@
 import datetime
 import logging
 import multiprocessing
+import os
 import queue
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -142,6 +143,7 @@ class RTaskControl:
     ):
         self.cfg = cfg
         self.gui_root = gui_root
+        self.working_dir = os.getcwd()
         if thread_pool_size <= 0:
             thread_pool_size = multiprocessing.cpu_count()
         self.thread_pool = ThreadPoolExecutor(max_workers=thread_pool_size)

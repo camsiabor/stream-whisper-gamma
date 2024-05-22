@@ -77,24 +77,6 @@ class Recorder(threading.Thread):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close_stream()
 
-    """
-    def to_wav(self, path: str = "", clear=True):
-        if path is None or len(path) <= 0:
-            current_datetime = datetime.datetime.now()
-            datetime_string = current_datetime.strftime("%Y%m%d-%H%M%S.%f")[:-3]
-            path = f"../temp/{datetime_string}.wav"
-
-        path = os.path.abspath(path)
-        dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        frames = self.get_current_frames()
-        with open(path, "wb") as file:
-            file.write(frames)
-
-        return path
-    """
 
     def get_default_wasapi_device(self):
         try:  # Get default WASAPI info

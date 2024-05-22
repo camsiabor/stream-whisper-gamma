@@ -1,5 +1,8 @@
 import datetime
+import os
 
+
+# get / set / clone =============================================================================== #
 
 def getv(cfg: dict, default=None, *keys):
     value = cfg
@@ -55,47 +58,54 @@ def clonev(src: dict, des: dict, default=None, *keys):
     return current_des
 
 
-def get_map(cfg: dict, target: dict = None, *tuples):
-    if target is None:
-        target = {}
-    for t in tuples:
-        tuple_size = len(t)
-        if tuple_size == 0:
-            continue
-        if tuple_size == 1:
-            key = t[0]
-            target[key] = getv(cfg, None, key)
-            continue
+# Text =============================================================================== #
 
-        default = t[-1]
-        target[key] = getv(cfg, default, *t[:-1])
-    return target
+class Text:
+
+    @staticmethod
+    def insert_newline_per(text: str, max_len: int = 10) -> str:
+        words = text.split()
+        new_text = ""
+        for i, word in enumerate(words):
+            new_text += word + " "
+            if (i + 1) % max_len == 0:
+                new_text += "\n"
+        return new_text
 
 
-def insert_newline_per(text: str, max_len: int = 10) -> str:
-    words = text.split()
-    new_text = ""
-    for i, word in enumerate(words):
-        new_text += word + " "
-        if (i + 1) % max_len == 0:
-            new_text += "\n"
-    return new_text
+# Time =============================================================================== #
+
+class Time:
+    @staticmethod
+    def datetime_str() -> str:
+        return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
 
-def datetime_str() -> str:
-    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+# Collection =============================================================================== #
+class Collection:
+    @staticmethod
+    def insort_ex(container, unit, low=0, high=None, right=True, key=lambda item: item):
+        if high is None:
+            high = len(container)
+        value_unit = key(unit)
+        while low < high:
+            mid = (low + high) // 2
+            unit_mid = container[mid]
+            value_mid = key(unit_mid)
+            if (value_mid < value_unit) if right else (value_mid > value_unit):
+                low = mid + 1
+            else:
+                high = mid
+        container.insert(low, unit)
 
 
-def insort_ex(container, unit, low=0, high=None, right=True, key=lambda item: item):
-    if high is None:
-        high = len(container)
-    value_unit = key(unit)
-    while low < high:
-        mid = (low + high) // 2
-        unit_mid = container[mid]
-        value_mid = key(unit_mid)
-        if (value_mid < value_unit) if right else (value_mid > value_unit):
-            low = mid + 1
-        else:
-            high = mid
-    container.insert(low, unit)
+# FileIO =============================================================================== #
+class FileIO:
+
+    @staticmethod
+    def open(file_path, encoding='utf-8', mkdir=True):
+        if mkdir:
+            parent_directory = os.path.dirname(file_path)
+            os.makedirs(parent_directory, exist_ok=True)
+        file = open(file_path, 'a', encoding=encoding)
+        return file

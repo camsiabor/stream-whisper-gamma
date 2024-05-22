@@ -52,7 +52,7 @@ class RTranscriber(threading.Thread):
         self.lang_src = sim.getv(cfg, None, "lang_src")
         self.beam_size = sim.getv(cfg, 5, "beam_size")
         self.model_size = sim.getv(cfg, "large-v3", "model_size")
-        self.download_root = sim.getv(cfg, "../models", "download_root")
+        self.download_root = sim.getv(cfg, "./models", "download_root")
         self.local_files_only = sim.getv(cfg, True, "local_files_only")
         self.device = sim.getv(cfg, "cuda", "device")
         self.compute_type = sim.getv(cfg, "default", "compute_type")
@@ -121,7 +121,7 @@ class RTranscriber(threading.Thread):
         return False
 
     def run(self):
-        self.logger.info(f"running | source language: {self.lang_src}")
+        self.logger.info(f"running | source language: {self.lang_src} | model: {self.model_size}")
         error_count = 0
         while self.do_run:
             try:

@@ -16,7 +16,7 @@ from src.service.gui.root import RGuiRoot
 
 
 def test_config():
-    config_path = "../../config/cfg.yaml"
+    config_path = "./config/cfg.yaml"
     with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
     return cfg
@@ -32,7 +32,7 @@ def test_google():
 def test_poe():
     # https://github.com/snowby666/poe-api-wrapper?tab=readme-ov-file#how-to-get-your-token
 
-    config_path = "../../config/cfg.yaml"
+    config_path = "./config/cfg.yaml"
     with open(config_path, mode='r', encoding='utf-8') as config_file:
         cfg = yaml.safe_load(config_file)
 
