@@ -106,16 +106,23 @@ class RTranscriber(threading.Thread):
                 continue
             if t.strip().replace('.', ''):
                 yield t
+        pass
 
-    ignore_list = [
+    ignore_list_single = [
+        "♪"
+    ]
+
+    ignore_list_pair = [
         ("(", ")"), ("[", "]"), ("*", "*"),
         ("（", "）"), ("【", "】"), ("［", "］"),
     ]
 
     def ignore(self, text):
         head = text[0]
+        if head in self.ignore_list_single:
+            return True
         tail = text[-1]
-        for pair in self.ignore_list:
+        for pair in self.ignore_list_pair:
             if head == pair[0] and tail == pair[1]:
                 return True
         return False
