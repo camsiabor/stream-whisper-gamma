@@ -77,7 +77,6 @@ class Recorder(threading.Thread):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close_stream()
 
-
     def get_default_wasapi_device(self):
         try:  # Get default WASAPI info
             wasapi_info = self.py_audio.get_host_api_info_by_type(pyaudio.paWASAPI)
