@@ -67,6 +67,7 @@ class RTranslator(threading.Thread):
         self.phoneme = {
             "convert": convert,
             "translate": sim.getv(phoneme_cfg, False, "translate"),
+            "only": sim.getv(phoneme_cfg, False, "only"),
         }
         if convert:
             self.phoneme_ja = cutlet.Cutlet()
@@ -129,11 +130,17 @@ class RTranslator(threading.Thread):
 
         return task.text_phoneme
 
-    async def translate(self, text, lang_src):
+    async def translate(self, task, text, lang_src):
         if lang_src == self.lang_des:
             return text
 
         ret = ""
+
+        if len(task.text_phoneme) > 0 and self.phoneme.get("translate", False):
+            if self.phoneme.get("only", False):
+                text = task.text_phoneme
+            else:
+                text = text + " | " + task.text_phoneme
 
         if len(ret) <= 0 and self.agent_ollama is not None:
             try:
@@ -254,6 +261,7 @@ class RTranslator(threading.Thread):
 
                 if not cached:
                     translated = await self.translate(
+                        task,
                         task.text_transcribe,
                         task.text_info.language,
                     )
