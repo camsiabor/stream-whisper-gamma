@@ -5,7 +5,9 @@ import ollama
 from src import rtask
 from src.common import sim, langutil
 
-
+"""
+OllamaCtrl is a class that is used to control the Ollama service.
+"""
 class OllamaCtrl:
     domains = {}
 
