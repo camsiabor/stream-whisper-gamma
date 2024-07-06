@@ -63,10 +63,52 @@ class Reflector:
 
     @staticmethod
     def from_dict(obj: object, data: dict):
+        primitive_types = (int, str, float, bool, list, tuple, set)
         for attr in dir(obj):
-            if not attr.startswith("__") and attr in data:
-                setattr(obj, attr, data[attr])
+            if attr.startswith("__"):
+                continue
+            attr_value = getattr(obj, attr, None)
+            if attr in data:
+                if isinstance(data[attr], dict) and not isinstance(attr_value, primitive_types):
+                    # If the attribute is a complex type and the corresponding data is a dictionary,
+                    # recursively update or instantiate this attribute.
+                    if attr_value is None:
+                        # If the attribute is None, try to instantiate it if it's a class.
+                        attr_type = type(attr_value)
+                        new_obj = attr_type() if attr_type not in primitive_types else data[attr]
+                        setattr(obj, attr, Reflector.from_dict(new_obj, data[attr]))
+                    else:
+                        # If the attribute already has a value, update it recursively.
+                        setattr(obj, attr, Reflector.from_dict(attr_value, data[attr]))
+                else:
+                    # For primitive types or non-dictionary data, directly set the attribute.
+                    setattr(obj, attr, data[attr])
         return obj
+
+    @staticmethod
+    def to_dict(obj: object) -> dict:
+        result = {}
+        primitive_types = (int, str, float, bool, list, tuple, set, dict)
+        for attr in dir(obj):
+            if attr.startswith("__") or callable(getattr(obj, attr)):
+                continue
+            value = getattr(obj, attr, None)
+            if isinstance(value, primitive_types):
+                result[attr] = value
+            else:
+                result[attr] = Reflector.to_dict(value)
+        return result
+
+    @staticmethod
+    def to_yaml(obj: object, file_path: str):
+        data = Reflector.to_dict(obj)
+        Reflector.dict_to_yaml(data, file_path)
+
+    @staticmethod
+    def dict_to_yaml(data: dict, file_path: str):
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, mode='w', encoding='utf-8') as file:
+            yaml.dump(data, file, allow_unicode=True)
 
     @staticmethod
     def inst(data: dict):
@@ -75,6 +117,7 @@ class Reflector:
     @staticmethod
     def clone(obj):
         return Reflector.from_dict(obj.__class__(), obj.__dict__)
+
 
 # Text =============================================================================== #
 
