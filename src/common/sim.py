@@ -58,6 +58,24 @@ def clonev(src: dict, des: dict, default=None, *keys):
     return current_des
 
 
+# Reflection =============================================================================== #
+class Reflector:
+
+    @staticmethod
+    def from_dict(obj: object, data: dict):
+        for attr in dir(obj):
+            if not attr.startswith("__") and attr in data:
+                setattr(obj, attr, data[attr])
+        return obj
+
+    @staticmethod
+    def inst(data: dict):
+        return Reflector.from_dict(data.__class__(), data)
+
+    @staticmethod
+    def clone(obj):
+        return Reflector.from_dict(obj.__class__(), obj.__dict__)
+
 # Text =============================================================================== #
 
 class Text:
