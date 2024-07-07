@@ -1,5 +1,8 @@
 import datetime
+import logging
 import os
+
+import yaml
 
 
 # get / set / clone =============================================================================== #
@@ -117,6 +120,39 @@ class Reflector:
     @staticmethod
     def clone(obj):
         return Reflector.from_dict(obj.__class__(), obj.__dict__)
+
+
+# ConfigLoader =============================================================================== #
+
+class ConfigUtil:
+    @staticmethod
+    def load_yaml(*config_paths):
+        """
+        Load the first existing configuration file from the given paths.
+        :param config_paths: Variable number of paths to configuration files.
+        :return: The loaded configuration as a dictionary.
+        """
+        for config_path in config_paths:
+            if os.path.exists(config_path):
+                with open(config_path, mode='r', encoding='utf-8') as config_file:
+                    return yaml.safe_load(config_file)
+        # Optionally, return a default configuration or raise an exception if no file is found.
+        raise FileNotFoundError("No configuration file found in the provided paths.")
+
+
+# Logging =============================================================================== #
+
+class LogUtil:
+    @staticmethod
+    def load_yaml(*config_path):
+        config = ConfigUtil.load_yaml(*config_path)
+        log_path = getv(config, "", "handlers", "file_handler", "filename")
+        if not os.path.exists(log_path):
+            log_dir_path = os.path.dirname(log_path)
+            os.makedirs(log_dir_path, exist_ok=True)
+        # noinspection PyUnresolvedReferences
+        logging.config.dictConfig(config)
+        return config
 
 
 # Text =============================================================================== #
